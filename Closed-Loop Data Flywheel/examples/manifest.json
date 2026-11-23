@@ -1,0 +1,14 @@
+[
+  {
+    "title": "CSV 解析示例 · 合成压力观测",
+    "source_id": "helix-original-csv",
+    "source_url": "demo://original/csv",
+    "modality": "table",
+    "license": "CC0-1.0",
+    "discipline": "physics",
+    "text": "原创合成 CSV，用于解析器联调，不是真实实验观测。",
+    "local_file": "observations.csv",
+    "extract": {"format": "csv", "column": "pressure", "unit": "Pa"},
+    "is_demo": true
+  }
+]

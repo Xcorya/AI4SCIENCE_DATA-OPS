@@ -1,0 +1,42 @@
+{
+  "version": "helix-research-design-v1",
+  "status": "design_spec_not_an_executed_model_evaluation",
+  "taxonomy": {
+    "primary_domains": ["mathematics", "physics", "chemistry", "biology", "astronomy", "earth", "engineering"],
+    "extensions": ["finance", "medicine"],
+    "hierarchy": ["discipline", "subdiscipline", "knowledge_point"],
+    "candidate_width": [3, 5, 5],
+    "beam_width": 3
+  },
+  "confidence": {
+    "requires_calibration": true,
+    "bands": [{"minimum": 0.99, "points": 3}, {"minimum": 0.95, "points": 2}, {"minimum": 0.90, "points": 1}],
+    "otherwise_points": 0,
+    "runtime_classifier": "keyword retrieval, uncalibrated"
+  },
+  "core_information": [
+    "knowledge_points", "research_nature", "knowledge_combinations",
+    "distracting_conditions", "interdisciplinary_links", "structural_complexity"
+  ],
+  "research_task_constraints": {
+    "source_grounded": true,
+    "inverse_reasoning": true,
+    "cross_domain_only_if_supported": true,
+    "mcq_min_options": 7,
+    "checkable_solution_steps_target": 6,
+    "uniqueness_requires_verifier": true,
+    "no_synthetic_claims_as_observations": true,
+    "no_length_based_reward": true
+  },
+  "verifier_routing": {
+    "numeric": "implemented: decimal reference + finite values + unit match",
+    "symbolic": "planned: SymPy / Lean",
+    "code": "planned: isolated container with resource budget",
+    "cad": "implemented: ASCII STL facet geometry; planned: STEP topology and CAD kernel",
+    "molecule": "implemented: XYZ distances; planned: chemistry validity and simulation",
+    "image_video": "planned: licensed raw assets + VLM / OCR / frame evidence",
+    "open_ended": "manual review required"
+  },
+  "quality_gates": ["rights", "evidence", "structure", "verification", "isolation"],
+  "feedback": {"ema_alpha": 0.3, "priority_error_gain": 2, "exclude_holdout": true}
+}

@@ -1,0 +1,8 @@
+{
+  "rows": 36,
+  "sha256": "aae8d6e2b4fadbfe60d76f027637bdb61b711cd0c030ec7b918f819c60742402",
+  "format": "sft",
+  "split": "train",
+  "include_demo": true,
+  "created_at": "2026-11-20T10:18:53+00:00"
+}

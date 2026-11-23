@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b0e0c">
+  <meta name="description" content="HELIX — an open science data flywheel. From evidence to verifiable reasoning.">
+  <title>HELIX — Science Data Flywheel</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a href="#overview" class="brand" aria-label="HELIX 首页"><span class="brand-mark">⌘</span> HELIX<span class="version">/ 0.1</span></a>
+    <nav aria-label="主导航">
+      <a href="#overview" data-nav="overview">飞轮总览</a>
+      <a href="#assets" data-nav="assets">数据宇宙</a>
+      <a href="#synthesis" data-nav="synthesis">构造实验室</a>
+      <a href="#quality" data-nav="quality">质量引擎</a>
+      <a href="#feedback" data-nav="feedback">评测回流</a>
+    </nav>
+    <a href="#handbook" class="doc-link">项目手册 <span>↗</span></a>
+  </header>
+  <main id="app"><div class="loading">正在连接本地数据引擎…</div></main>
+  <footer><span><i class="live-dot"></i> HELIX / OPEN SCIENCE INFRASTRUCTURE</span><span>从证据出发，让推理生长。<span class="footer-version">THEORY BUILD · V0.1</span></span></footer>
+  <dialog id="modal"><div id="modal-content"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

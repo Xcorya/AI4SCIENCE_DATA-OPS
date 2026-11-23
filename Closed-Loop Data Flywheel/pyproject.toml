@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helix-science-flywheel"
+version = "0.1.0"
+description = "An evidence-first AI4Science data flywheel reference implementation"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+readme = "README.md"
+dependencies = []
+
+[tool.setuptools]
+packages = ["helix"]
+
+# Run from the source checkout so the dashboard and docs are available.

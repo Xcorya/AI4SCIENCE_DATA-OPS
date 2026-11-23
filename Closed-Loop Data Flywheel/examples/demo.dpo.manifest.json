@@ -1,0 +1,8 @@
+{
+  "rows": 36,
+  "sha256": "db3caad479d22f6b32a03c339dd092c779e5bda2f2ec52c6143ab3df0c99e36f",
+  "format": "dpo",
+  "split": "train",
+  "include_demo": true,
+  "created_at": "2026-11-20T10:18:53+00:00"
+}
