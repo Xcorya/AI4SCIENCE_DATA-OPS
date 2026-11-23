@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#111214"><title>FORGE · 数据采购工作台</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body data-app="forge">
+<aside class="rail"><a class="brand" href="/" aria-label="FORGE 首页"><span class="mark">F</span>FORGE<span class="version">01</span></a><div class="rail-label">DATA SUPPLY CHAIN</div>
+<nav aria-label="主导航"><button class="nav active" data-view="workbench"><span>01</span>采购工作台</button><button class="nav" data-view="orders"><span>02</span>订单与交付</button><button class="nav" data-view="audit"><span>03</span>操作留痕</button></nav>
+<div class="rail-bottom"><div class="orb"></div><strong>需求 → 证据 → 交付</strong><p>每一批数据，都有来路。</p><div id="mode" class="mode">正在连接本地服务</div></div></aside>
+<main><header class="topbar"><span>PROCUREMENT / WORKSPACE</span><div><span class="live-dot"></span>LOCAL <span class="top-divider">/</span> FORGE 0.1</div></header>
+<section class="hero"><div><div class="eyebrow">BUILD THE DATA YOU NEED</div><h1>Turn demand<br>into <em>delivery.</em></h1><p>让数据需求成为可比较、可交付、可验收的采购。</p></div><div class="hero-symbol" aria-hidden="true"><svg viewBox="0 0 240 180"><path d="M30 60 120 12 210 60 120 108Z"/><path d="M30 90 120 138 210 90M30 120 120 168 210 120"/><path d="M120 12V108M30 60V120M210 60V120"/></svg><span>SPEC → SOURCE → SHIP</span></div></section>
+<section id="metrics" class="metrics" aria-label="工作台指标"></section><section id="content" aria-live="polite"><p class="loading">正在载入需求与报价…</p></section>
+<footer>FORGE / Evidence before commitment.<span>本地采购记录 · 无外部下单</span></footer></main>
+<dialog id="editor"><form id="editor-form"><div class="dialog-head"><div><div class="eyebrow">FORGE / ACTION</div><h2 id="editor-title"></h2></div><button type="button" class="icon-button" id="close-editor" aria-label="关闭">×</button></div><div id="editor-fields"></div><p id="editor-error" role="alert"></p><div class="dialog-actions"><button class="primary" type="submit" id="editor-submit">保存</button></div></form></dialog>
+<div id="toast" role="status" class="toast" hidden></div>
+</body></html>

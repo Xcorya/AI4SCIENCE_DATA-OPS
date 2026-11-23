@@ -1,0 +1,168 @@
+{
+  "protocol": "forge-aegis/1",
+  "kind": "delivery",
+  "order_id": "PO-SYNTHETIC-defects",
+  "delivery_id": "DLV-SYNTHETIC-defects",
+  "created_at": "2026-11-23T00:00:00+00:00",
+  "spec": {
+    "title": "多语种科研摘要 · 首批交付",
+    "quantity": 24,
+    "budget_cents": 120000,
+    "currency": "CNY",
+    "max_days": 14,
+    "purpose": "model_training",
+    "region": "CN",
+    "max_defect_rate": 0.05,
+    "allow_derivatives": true,
+    "allow_pii": false,
+    "schema": {
+      "id": "string",
+      "text": "string",
+      "language": "string"
+    },
+    "unique_key": "id"
+  },
+  "spec_hash": "7ab90853fcf084c50961f55379ccffac5b5410eba06099416b1a5ccaae2354c6",
+  "manifest": {
+    "coverage": "full",
+    "record_count": 24,
+    "source": "Synthetic fixture generated locally",
+    "license": "Synthetic-Research-Grant-1.0",
+    "evidence": "fixtures/RIGHTS.md",
+    "rights_verified": true,
+    "purposes": [
+      "model_training"
+    ],
+    "regions": [
+      "CN",
+      "EU"
+    ],
+    "derivatives": true,
+    "valid_until": "2030-12-31",
+    "prohibited_source": false,
+    "synthetic": true
+  },
+  "records": [
+    {
+      "id": "synthetic-001",
+      "text": "Synthetic research abstract number 1.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-001",
+      "text": "Synthetic research abstract number 2.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-003",
+      "text": "",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-004",
+      "text": "Synthetic research abstract number 4.",
+      "language": 42
+    },
+    {
+      "id": "synthetic-005",
+      "text": "Synthetic research abstract number 5.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-006",
+      "text": "Synthetic research abstract number 6.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-007",
+      "text": "Synthetic research abstract number 7.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-008",
+      "text": "Synthetic research abstract number 8.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-009",
+      "text": "Synthetic research abstract number 9.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-010",
+      "text": "Synthetic research abstract number 10.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-011",
+      "text": "Synthetic research abstract number 11.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-012",
+      "text": "Synthetic research abstract number 12.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-013",
+      "text": "Synthetic research abstract number 13.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-014",
+      "text": "Synthetic research abstract number 14.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-015",
+      "text": "Synthetic research abstract number 15.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-016",
+      "text": "Synthetic research abstract number 16.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-017",
+      "text": "Synthetic research abstract number 17.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-018",
+      "text": "Synthetic research abstract number 18.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-019",
+      "text": "Synthetic research abstract number 19.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-020",
+      "text": "Synthetic research abstract number 20.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-021",
+      "text": "Synthetic research abstract number 21.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-022",
+      "text": "Synthetic research abstract number 22.",
+      "language": "zh"
+    },
+    {
+      "id": "synthetic-023",
+      "text": "Synthetic research abstract number 23.",
+      "language": "en"
+    },
+    {
+      "id": "synthetic-024",
+      "text": "Synthetic research abstract number 24.",
+      "language": "zh"
+    }
+  ],
+  "dataset_hash": "66467c97ec88cc140e883bb389e9bb1738e3f93fae9d49043aa86e80eb7184a6"
+}
