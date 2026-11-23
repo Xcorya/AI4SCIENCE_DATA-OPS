@@ -1,0 +1,13 @@
+{
+  "version": "0.1.1",
+  "pipeline_version": "unconfigured-reference-v1",
+  "minimum_independent_families": 2,
+  "candidate_score_floor": 0.8,
+  "contradiction_score": 0.8,
+  "whole_video_minimum_coverage": 0.8,
+  "target_precision": 0.98,
+  "familywise_alpha": 0.05,
+  "minimum_audit_n": 100,
+  "minimum_tune_n": 30,
+  "scope_note": "Illustrative policy defaults; 0.98 is a target, not a measured result. Before real calibration replace pipeline_version with a fixed registry revision covering model/weight, prompt, preprocessing, sampling and evidence-tool versions. Every such change requires a new revision and independent audit."
+}

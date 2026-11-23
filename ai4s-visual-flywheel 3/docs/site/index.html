@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AI4Science 图像与视频数据飞轮：可解释标签、证据复核、拒识与训练任务构造的交互式理论演示。">
+  <meta name="theme-color" content="#101b34">
+  <title>Visual Flywheel · AI4Science 视觉数据飞轮</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到内容</a>
+  <header class="site-header">
+    <a href="#" class="brand" aria-label="Visual Flywheel 首页"><span class="brand-mark" aria-hidden="true">◎</span><span>VISUAL <strong>FLYWHEEL</strong><small>AI4SCIENCE / RESEARCH BLUEPRINT</small></span></a>
+    <nav aria-label="主导航"><a href="#approach">方法</a><a href="#workbench">验证台</a><a href="#taxonomy">标签体系</a><a href="#feedback">数据闭环</a></nav>
+    <a class="header-link" href="reference/readme.html">阅读源码说明</a>
+  </header>
+  <main id="main">
+    <section class="hero section-wrap">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> IMAGE + VIDEO / EVIDENCE FIRST</p>
+        <h1>让每一个标签，<br>都能回到<span>证据。</span></h1>
+        <p class="hero-description">面向 AI4Science 的图像与视频数据飞轮。把多模态候选转化为可追溯标签，再把可靠标签转化为可验证的训练任务。</p>
+        <div class="hero-actions"><a class="button primary" href="#workbench">打开交互验证台</a><a class="text-link" href="reference/whitepaper.html">阅读算法设计</a></div>
+        <p class="scope-note">理论方案 + 策略原型 <span>·</span> 本页全部样本为合成示例 <span>·</span> 无真实模型推理</p>
+      </div>
+      <div class="hero-system" aria-label="图像、视频、证据与训练任务的关系图">
+        <div class="system-topline"><span class="mono">CURATION SYSTEM</span><span class="outline-tag">PROPOSED v0.1</span></div>
+        <div class="system-media">
+          <div class="media-mini"><div class="mini-top"><span>IMAGE</span><span>Fig. region</span></div><svg viewBox="0 0 240 120" role="img" aria-label="合成示例：折线图"><path d="M25 10V100H225" fill="none" stroke="#7386a4"/><path d="M25 73L63 66L102 52L143 57L181 28L221 18" fill="none" stroke="#6ce4d0" stroke-width="3"/><path d="M25 85L63 79L102 69L143 65L181 59L221 45" fill="none" stroke="#a9a1ff" stroke-width="3"/><g fill="#6ce4d0"><circle cx="63" cy="66" r="3"/><circle cx="143" cy="57" r="3"/><circle cx="221" cy="18" r="3"/></g></svg><div class="media-foot">内容形态 ≠ 学科结论</div></div>
+          <div class="media-mini video-mini"><div class="mini-top"><span>VIDEO</span><span>Event span</span></div><div class="frame-strip" aria-hidden="true"><i></i><i></i><i></i></div><div class="mini-timeline"><span></span></div><div class="media-foot">镜头 → 事件 → 时间证据</div></div>
+        </div>
+        <div class="system-path"><span>Bo3 候选</span><span class="path-line"></span><span class="system-focus">独立证据复核</span><span class="path-line"></span><span>标签 / 拒识</span></div>
+        <div class="system-bottom"><span><i class="evidence-dot"></i>区域 / OCR / 时间窗 / 来源</span><span>QA · SFT · RL</span></div>
+      </div>
+    </section>
+    <div class="notice section-wrap"><span class="notice-icon" aria-hidden="true">i</span><p><strong>这是可操作的理论蓝图。</strong>页面模拟筛选策略，不识别上传媒体，也不展示真实准确率。正式入库阈值必须在独立人工标注集上校准，并保留未知、复核与权利待确认样本。</p></div>
+
+    <section id="approach" class="section-wrap method-section">
+      <div class="section-heading"><div><p class="eyebrow">DESIGN PRINCIPLE</p><h2>先证据，再标签，最后进入训练。</h2></div><p>把“猜得像”与“可验证”分开。</p></div>
+      <div class="method-grid">
+        <article><span class="method-label teal">CANDIDATE</span><h3>Bo3 扩展候选空间</h3><p>同一媒体生成三组可替代标签假设，保留区域、文本和时间依据。候选覆盖优先，模型重复输出不增加独立证据票数。</p></article>
+        <article><span class="method-label violet">VERIFY</span><h3>按依赖组复核证据</h3><p>视觉、OCR、结构解析与时间验证分别提出支持或反证。同源模型、同一 OCR 上游和相同提示派生结果归为同一组。</p></article>
+        <article><span class="method-label blue">RELEASE</span><h3>校准后选择性接收</h3><p>逐标签校准阈值，检查层级、互斥、来源权利和泄漏。仅保留各自有证据的标签；细分类依据不足时进入人工复核。</p></article>
+      </div>
+    </section>
+
+    <section id="workbench" class="workbench-section">
+      <div class="section-wrap">
+        <div class="section-heading"><div><p class="eyebrow">INTERACTIVE POLICY LAB</p><h2>看一条样本如何经过验证。</h2></div><span class="pill demo-pill">合成样本 / 策略演示</span></div>
+        <div class="workbench">
+          <aside class="sample-sidebar">
+            <div class="sidebar-head"><span class="mono">SAMPLE QUEUE</span><span id="sample-count"></span></div>
+            <div class="mode-tabs" role="group" aria-label="媒体类型"><button type="button" data-mode="image" aria-pressed="true">图像</button><button type="button" data-mode="video" aria-pressed="false">视频</button></div>
+            <div id="sample-list" class="sample-list" aria-label="合成样本列表"></div>
+            <div class="sidebar-note"><strong>不确定性也要入库</strong><p>保留冲突与拒识原因，供人工标注、难例挖掘和下一轮策略改进。</p></div>
+          </aside>
+          <div class="sample-main">
+            <div class="sample-header"><div><p id="sample-id" class="mono"></p><h3 id="sample-title"></h3></div><button type="button" class="button small secondary" id="download-sample">下载示例 JSON</button></div>
+            <p id="download-status" class="download-status" role="status" aria-live="polite"></p>
+            <div id="sample-visual" class="sample-visual"></div>
+            <p id="sample-description" class="sample-description"></p>
+            <div class="detail-tabs" role="tablist" aria-label="样本详情">
+              <button id="tab-candidates" role="tab" type="button" data-panel="candidates" aria-controls="panel-candidates" aria-selected="true">Bo3 候选</button>
+              <button id="tab-evidence" role="tab" type="button" data-panel="evidence" aria-controls="panel-evidence" aria-selected="false" tabindex="-1">证据账本</button>
+              <button id="tab-task" role="tab" type="button" data-panel="task" aria-controls="panel-task" aria-selected="false" tabindex="-1">训练任务</button>
+            </div>
+            <div id="panel-candidates" role="tabpanel" aria-labelledby="tab-candidates"><div id="candidate-list"></div><p class="detail-note">三次候选生成均属于 <code>generator-A</code>。Bo3 是 Best-of-3 候选搜索，本页不把三次输出解释为三份独立证据。</p></div>
+            <div id="panel-evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden><div id="evidence-list"></div><p class="detail-note">依赖组是避免重复计票的工程近似，不等于统计独立。质量分仅为演示输入，不是准确率。</p></div>
+            <div id="panel-task" role="tabpanel" aria-labelledby="tab-task" hidden><p class="detail-note">下列是候选任务，须通过校准与金标验收后才能用于训练。可执行验证只覆盖结构化目标，不为整段自由解释背书。</p><pre id="task-json" tabindex="0"></pre></div>
+          </div>
+          <aside class="policy-panel">
+            <div class="policy-heading"><span class="mono">ACCEPTANCE POLICY</span><span class="pill">DEMO</span></div>
+            <label for="family-threshold">最少证据依赖组 <output id="family-value" for="family-threshold">2</output></label>
+            <input id="family-threshold" type="range" min="1" max="3" step="1" value="2" aria-describedby="family-help">
+            <p id="family-help" class="control-help">同一组内多次支持，只计一次。正式阈值需金标实验选择。</p>
+            <label for="quality-threshold">证据质量门槛 <output id="quality-value" for="quality-threshold">0.86</output></label>
+            <input id="quality-threshold" type="range" min="0.5" max="0.99" step="0.01" value="0.86" aria-describedby="quality-help">
+            <p id="quality-help" class="control-help">只用于观察策略变化。不是概率置信度，也不是推荐生产阈值。</p>
+            <div class="policy-divider"></div>
+            <p class="mini-heading">当前路径</p><div id="decision-status" class="decision-status" aria-live="polite"></div>
+            <div id="decision-reasons"></div>
+            <div class="policy-divider"></div>
+            <p class="mini-heading">逐标签结果</p><div id="label-decisions"></div>
+            <div class="calibration-warning"><strong>校准状态：未校准</strong><span>通过演示规则仍是 provisional，不能据此声称达到目标精度。</span></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="taxonomy" class="section-wrap taxonomy-section">
+      <div class="section-heading"><div><p class="eyebrow">MULTI-AXIS ONTOLOGY</p><h2>分类的对象，和判断的边界。</h2></div><a class="text-link" href="reference/taxonomy.html">查看完整标签规范</a></div>
+      <div class="taxonomy-intro"><p>“显微图”是内容形态，“材料科学”是学科，“裂纹扩展”是事件。它们可以同时成立，但必须各自持有证据。以下展示本体中的代表性标签，完整本体以仓库配置为准。</p><label class="search-box"><span aria-hidden="true">⌕</span><input id="taxonomy-search" type="search" placeholder="搜索标签、英文 ID 或证据要求" aria-label="搜索代表性标签"></label></div>
+      <div id="taxonomy-filters" class="filter-row" role="group" aria-label="标签维度筛选"><button type="button" data-axis="all" aria-pressed="true">全部维度</button><button type="button" data-axis="appearance" aria-pressed="false">内容形态</button><button type="button" data-axis="acquisition" aria-pressed="false">采集来源</button><button type="button" data-axis="subject" aria-pressed="false">学科</button><button type="button" data-axis="video" aria-pressed="false">视频形式</button><button type="button" data-axis="event" aria-pressed="false">时间事件</button><button type="button" data-axis="task" aria-pressed="false">任务</button></div>
+      <div class="taxonomy-table-wrap"><table class="taxonomy-table"><thead><tr><th scope="col">标签与维度</th><th scope="col">支持这个标签的证据</th><th scope="col">禁止跳过的判断边界</th></tr></thead><tbody id="taxonomy-rows"></tbody></table></div>
+      <p id="taxonomy-summary" class="detail-note" aria-live="polite"></p>
+    </section>
+
+    <section id="feedback" class="feedback-section">
+      <div class="section-wrap feedback-grid">
+        <div><p class="eyebrow">DATA FLYWHEEL</p><h2>增长来自纠错，<br>不只来自更多生成。</h2><p>把冲突、漏检和领域漂移变成下一轮采样信号。发布后的训练结果只能改变候选策略，最终验收始终回到独立标注与可执行验证。</p><a class="text-link light" href="reference/data-strategy.html">阅读完整数据策略</a></div>
+        <div class="flywheel-flow"><div><span class="flow-index">采集</span><p>来源清单 · 许可证 · 原始媒体哈希</p></div><div><span class="flow-index">识别</span><p>分层候选 · 区域定位 · 时间事件</p></div><div><span class="flow-index">复核</span><p>独立证据 · 冲突隔离 · 人工金标</p></div><div><span class="flow-index">构造</span><p>QA / SFT · 结构化 RL 任务 · 数据血缘</p></div><div><span class="flow-index">回流</span><p>错误聚类 · 主动采样 · 新版本校准</p></div></div>
+      </div>
+    </section>
+    <section class="section-wrap publication-section"><div><p class="eyebrow">OPEN RESEARCH ARTIFACT</p><h2>从理论方案开始，向可复现系统推进。</h2><p>页面、标签规范、参考策略与合成输入一起版本化。模型接入、人工金标评测、来源授权和生产吞吐测量，是后续实测工作。</p></div><div class="publication-links"><a href="reference/readme.html">仓库入门</a><a href="reference/whitepaper.html">算法说明</a><a href="reference/evaluation.html">评估方案</a><a href="reference/taxonomy.json">标签配置</a></div></section>
+  </main>
+  <footer class="site-footer section-wrap"><span class="brand-footer">VISUAL FLYWHEEL</span><p>AI4Science · 图像与视频分类研究原型</p><span>合成演示 / 无实测精度声明</span></footer>
+  <script src="app.js" defer></script>
+</body>
+</html>

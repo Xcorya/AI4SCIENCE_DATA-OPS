@@ -1,0 +1,41 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VALIDATION</title><style>body{margin:0;color:#23324a;background:#f5f8fc;font:17px/1.85 system-ui,-apple-system,"PingFang SC",sans-serif}header{background:#101b34;color:white;padding:20px max(24px,calc((100vw - 1000px)/2));display:flex;gap:24px;flex-wrap:wrap}header a{color:#8de6d9}main{max-width:1000px;margin:32px auto 80px;padding:32px 44px;background:white;border:1px solid #dce4ef;border-radius:16px}h1{font-size:2rem;line-height:1.4}h2{margin-top:2.4em;padding-top:.3em;border-top:1px solid #e2e8f0;font-size:1.5rem}h3{margin-top:1.8em;font-size:1.15rem}a{color:#126c87;text-underline-offset:3px}code{font:.9em/1.6 ui-monospace,monospace;background:#edf2f8;border-radius:4px;padding:2px 5px}pre{background:#111d34;color:#e5edf7;overflow:auto;padding:20px;border-radius:10px;white-space:pre;font-size:14px;line-height:1.7}pre code{background:none;color:inherit;padding:0;font-size:inherit}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;margin:22px 0;font-size:16px}th,td{border:1px solid #dce4ef;text-align:left;vertical-align:top;padding:12px}th{background:#edf3f8}blockquote{border-left:3px solid #328d95;padding:8px 20px;margin-left:0;background:#edf8f6}.reader-note{font-size:14px;color:#526079}.formula{white-space:pre-wrap;overflow-wrap:anywhere}li{margin:9px 0}@media(max-width:680px){main{margin:16px 10px;padding:22px 18px}h1{font-size:1.6rem}header{padding:18px}th,td{min-width:140px}}</style><header><strong>VISUAL FLYWHEEL</strong><a href="../index.html">交互演示</a><a href="readme.html">文档目录</a><a href="whitepaper.html">技术说明</a></header><main><h1 id="011-使用验证与修复报告">0.1.1 使用验证与修复报告</h1>
+<p>验证日期：2026 年 11 月 23 日。结论：<strong>源码说明、交互演示与结构化观测策略适合作为开发原型使用；尚不能作为原始图像/视频的生产识别服务。</strong> 本次验证软件行为，不评定真实媒体的识别精度。</p>
+<h2 id="验证结果">验证结果</h2>
+<div class="table-wrap"><table><thead><tr><th>检查</th><th>结果</th><th>验证边界</th></tr></thead><tbody>
+<tr><td>Python 单元与对抗测试</td><td>42 项通过</td><td>规则、统计计算、坏输入、切分、奖励、说明页渲染</td></tr>
+<tr><td>已安装软件完整流程</td><td>8 项通过</td><td>独立 Python 3.12 虚拟环境，关闭 PYTHONPATH，在临时目录调用</td></tr>
+<tr><td>页面逻辑与事件</td><td>16 项通过</td><td>Node.js 24 DOM/VM 测试，无第三方浏览器库</td></tr>
+<tr><td>合成演示</td><td>9 单元处理完成</td><td>2 provisional、5 human_review、1 quarantine、1 abstain，训练导出为零</td></tr>
+<tr><td>静态站点</td><td>15 个 HTML 文件通过检查</td><td>文件资源、片段链接、重复 ID、残留渲染占位符</td></tr>
+<tr><td>标签本体</td><td>106 标签、72 个有专属门槛、13 种检查</td><td>ID、父子引用、无环、模态和检查注册</td></tr>
+<tr><td>实际浏览器</td><td>页面、切换、阈值、搜索、文档、下载通过</td><td>本地 Chrome；控制台无 error；布局可读</td></tr>
+</tbody></table></div>
+<p>独立环境流程使用临时测试替身，覆盖默认配置、证书生成、图像/视频接收、2 个 SFT 与 2 个 RL 候选导出、正确/错误答案奖励、旧证书阻断、审计重复拒绝、JSON 文件行号错误。测试替身明确模拟上游可信声明；临时证书与训练候选自动删除，不能作为真实认证发布。</p>
+<h2 id="发现并修复的问题">发现并修复的问题</h2>
+<div class="table-wrap"><table><thead><tr><th>原问题与复现</th><th>修复</th></tr></thead><tbody>
+<tr><td>source=null、observations=[null] 等导致整批异常退出</td><td>检查嵌套结构和 ID，坏记录隔离或复核</td></tr>
+<tr><td>同张审计图片使用 200 个不同来源组，能够被重复计数并认证</td><td>同标签按内容 SHA-256 去重；重复直接拒绝</td></tr>
+<tr><td>更换哈希大小写可以绕过跨切分重复检查</td><td>SHA-256 统一大小写后比较</td></tr>
+<tr><td>claim_scope 拼写错误绕过整段视频覆盖门槛</td><td>仅接受已定义作用域；非法值进入复核</td></tr>
+<tr><td>页面将重叠窗口重复计入覆盖，且覆盖失败后逐标签仍显示暂定</td><td>使用区间并集；逐标签同步复核；任务目标清空</td></tr>
+<tr><td>安装后离开仓库目录就找不到配置</td><td>wheel 打包默认配置，支持任意工作目录</td></tr>
+<tr><td>代码语义改变后旧证书可能沿用</td><td>证书指纹绑定引擎版本，发布 0.1.1</td></tr>
+<tr><td>行内代码链接出现未展开的控制字符</td><td>修复嵌套渲染顺序；站点检查加入残留 token 检测</td></tr>
+<tr><td>照片形态标签隐含真实拍摄来源</td><td>改为摄影外观；真实采集留给来源标签与元数据验证</td></tr>
+</tbody></table></div>
+<p>非法 JSON 数值、畸形 RL 参考和错误配置也加入了回归检查。CLI 给出可读错误，语法错误显示文件名与行号，不打印 Python traceback。</p>
+<h2 id="浏览器实测">浏览器实测</h2>
+<p>切换图像/视频，选择只覆盖 12/120 秒的视频示例：相关标签均进入复核，export_to_training=false、target=null。提高质量门槛后样本进入复核；搜索 acquisition.tem 返回对应标签；完整标签说明页及包含行内代码的链接文字正确打开。</p>
+<p>下载 syn-vid-002-demo.json 后，实际在浏览器下载目录中读取并解析该文件：样例 ID 正确、demo_only=true、训练导出关闭、目标为空。浏览器自动化的 download 事件通知超时，但文件保存及内容已通过文件核对，未把界面提示当作文件成功的唯一依据。</p>
+<h2 id="复现">复现</h2>
+<pre tabindex="0"><code data-language="bash">PYTHONPATH=src python3 -m unittest discover -s tests -v
+python3 scripts/run_demo.py
+python3 scripts/verify_workflow.py
+node tests/web_policy.cjs
+python3 scripts/build_site_docs.py
+python3 scripts/check_site.py</code></pre>
+<p>测试 wheel：先构建 wheel 并在独立虚拟环境安装，再执行：</p>
+<pre tabindex="0"><code data-language="bash">python3 scripts/verify_workflow.py --python /absolute/path/to/venv/bin/python --installed</code></pre>
+<h2 id="尚不能证明的能力">尚不能证明的能力</h2>
+<p>没有执行真实视觉模型推理、真实金标精确率评测、模型训练、GitHub 远程工作流或公网 Pages 部署。当前没有从原始图片/视频直接生成观测的适配器，也没有可用的训练集或生产调度系统。</p>
+<p>因此不能声称达到 98%/99% 识别精度、专业推理正确或获得训练收益。接入真实媒体解析与视觉模型后，仍需按独立来源组做金标审计，测量逐类精确率、覆盖率、成本及下游收益。</p><p class="reader-note">静态文档副本由仓库 Markdown 生成。数学与流程图代码保留源形式；完整格式与版本以仓库文件为准。</p></main></html>

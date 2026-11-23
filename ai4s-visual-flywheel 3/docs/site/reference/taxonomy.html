@@ -1,0 +1,232 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>taxonomy</title><style>body{margin:0;color:#23324a;background:#f5f8fc;font:17px/1.85 system-ui,-apple-system,"PingFang SC",sans-serif}header{background:#101b34;color:white;padding:20px max(24px,calc((100vw - 1000px)/2));display:flex;gap:24px;flex-wrap:wrap}header a{color:#8de6d9}main{max-width:1000px;margin:32px auto 80px;padding:32px 44px;background:white;border:1px solid #dce4ef;border-radius:16px}h1{font-size:2rem;line-height:1.4}h2{margin-top:2.4em;padding-top:.3em;border-top:1px solid #e2e8f0;font-size:1.5rem}h3{margin-top:1.8em;font-size:1.15rem}a{color:#126c87;text-underline-offset:3px}code{font:.9em/1.6 ui-monospace,monospace;background:#edf2f8;border-radius:4px;padding:2px 5px}pre{background:#111d34;color:#e5edf7;overflow:auto;padding:20px;border-radius:10px;white-space:pre;font-size:14px;line-height:1.7}pre code{background:none;color:inherit;padding:0;font-size:inherit}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;margin:22px 0;font-size:16px}th,td{border:1px solid #dce4ef;text-align:left;vertical-align:top;padding:12px}th{background:#edf3f8}blockquote{border-left:3px solid #328d95;padding:8px 20px;margin-left:0;background:#edf8f6}.reader-note{font-size:14px;color:#526079}.formula{white-space:pre-wrap;overflow-wrap:anywhere}li{margin:9px 0}@media(max-width:680px){main{margin:16px 10px;padding:22px 18px}h1{font-size:1.6rem}header{padding:18px}th,td{min-width:140px}}</style><header><strong>VISUAL FLYWHEEL</strong><a href="../index.html">交互演示</a><a href="readme.html">文档目录</a><a href="whitepaper.html">技术说明</a></header><main><h1 id="ai4science-图像与视频标签体系">AI4Science 图像与视频标签体系</h1>
+<p>这是一套用于数据飞轮的 <strong>0.1 版标签提案</strong>，还没有经过真实数据集的精度验证。目标是让标签可以定位、复查、拒绝和逐版修订。标签数量不代表识别能力，配置中的标签也不代表当前代码已经能从像素识别它们。</p>
+<p>机器可读定义见 <a href="files/configs/taxonomy.json"><code>configs/taxonomy.json</code></a>。当前共 106 个标签；稳定英文 ID 用于数据库和模型接口，中文名称用于标注与展示。</p>
+<h2 id="1-一条数据同时回答六种问题">1. 一条数据同时回答六种问题</h2>
+<div class="table-wrap"><table><thead><tr><th>轴</th><th>回答的问题</th><th>示例</th><th>最低依据</th></tr></thead><tbody>
+<tr><td><code>appearance</code></td><td>画面采用什么表达方式？</td><td>折线图、显微图、工程图、网络图</td><td>当前图像区域的视觉证据；部分类型还须来源信息</td></tr>
+<tr><td><code>acquisition</code></td><td>资产如何采集、测量或生成？</td><td>CT、SEM、XRD、NMR、相机、合成渲染</td><td>可信元数据、原始文件或一一对应的来源说明</td></tr>
+<tr><td><code>subject</code></td><td>当前内容属于哪个专业语境？</td><td>材料、化学、力学、分子生物</td><td>当前面板或镜头自身的对象、量纲、图注或来源证据</td></tr>
+<tr><td><code>video</code></td><td>这一片段是什么视频形式？</td><td>实验实录、数值仿真、教程、讲座</td><td>片段证据及必要的来源确认</td></tr>
+<tr><td><code>event</code></td><td>时间上实际看到了什么变化？</td><td>流动、形变、装配</td><td>多帧或连续片段证据；检查视角与剪辑</td></tr>
+<tr><td><code>task</code></td><td>可能构造哪种可核验任务？</td><td>数值读取、计数、时序排序</td><td>明确问题范围与候选参考；还须经过任务级验证才能入训练集</td></tr>
+</tbody></table></div>
+<p><code>appearance.plot.line + subject.materials</code> 是两个不同的命题。“折线图”可能容易确认，“材料学”可能无法确认；只发布有依据的部分标签。<code>task.value_reading</code> 表示任务候选，不能直接证明这张图已经有可靠数值真值。</p>
+<p>例如，看见灰度纹理不能直接得到 <code>acquisition.electron_microscopy</code>；看见彩色云图不能直接得到 <code>appearance.simulation_field</code>；看见一个医学影像也不能得到任何疾病诊断。可见外观与来源事实分别取证。</p>
+<p><code>appearance.photo</code> 只表示摄影外观，写实生成图或渲染图也可以满足这个标签；它不表示真实实拍。确认相机采集必须另外标注 <code>acquisition.camera</code>，并提供已核对的采集元数据或一一对应的可信来源。摄影外观可与 <code>acquisition.synthetic</code> 同时成立。这一区分明确标签语义，不构成真实识别精度的验证。</p>
+<h2 id="2-标签的作用域">2. 标签的作用域</h2>
+<p>标签落在足够小且证据完整的单位上：<code>asset → panel/region → shot → track/event_interval</code>。层级表示定位关系，不表示每个资产必须具备所有单位。</p>
+<ul>
+<li><strong>图像</strong>：先保存原图；识别多面板并存面板框；对子图、图例、坐标轴或对象框作局部标签。不同面板可以有不同学科和表达形式。</li>
+<li><strong>视频</strong>：保留解码时间基、切镜边界、有效采样时间；标签可落在镜头、画中画区域、目标轨迹或事件区间。某个片段包含实验，不表示整个视频全为实验。</li>
+<li><strong>文档页</strong>：<code>appearance.document_panel</code> 是容器标签。论文标题不自动传给每张子图，正文也不替代当前子图证据。</li>
+<li><strong>资产检索标签</strong>：区域标签可汇总成“包含折线图”，必须保存 <code>derived=true</code> 和来源单位。汇总标签不是新的独立观察，不能再用来增加票数。</li>
+</ul>
+<p>边框采用相对原始解码图像的归一化坐标 <code>[x_min, y_min, x_max, y_max]</code>。裁剪、旋转、重采样必须保留坐标变换。时间采用解码展示时间轴的秒数，区间为 <code>[start, end)</code>；变帧率视频使用 PTS，不能用假设的固定帧率反推全部时间。</p>
+<h2 id="3-层级多标签与未知">3. 层级、多标签与未知</h2>
+<h3 id="31-父标签不能提供子标签证据">3.1 父标签不能提供子标签证据</h3>
+<p><code>appearance.plot</code> 下有折线、散点、柱状、直方、热力、谱图等子类。确认“这是数据图表”不能证明“这是谱图”。谱图需要可读坐标、单位或可核验图注。<code>subject.materials</code> 不能自动展开为 <code>subject.materials.microstructure</code>。</p>
+<p>子标签通过后，可为检索派生父标签；派生结果应明确来源。实现可以选择只保存原始确认标签，由检索阶段补父标签，避免重复计数。</p>
+<h3 id="32-默认不做全局互斥">3.2 默认不做全局互斥</h3>
+<p>一个图可以同时具有 <code>appearance.plot.line</code> 和 <code>appearance.plot.scatter</code>，例如散点叠加拟合曲线；一个视频可以同时包含实录和动画。106 个标签的 <code>excludes</code> 当前均为空，避免错误地把复合内容判为冲突。</p>
+<p>需要区分的情形包括：</p>
+<div class="table-wrap"><table><thead><tr><th>表面上类似</th><th>应如何处理</th></tr></thead><tbody>
+<tr><td>柱状图与直方图</td><td>检查横轴是类别还是连续分箱；不清楚则只给 <code>appearance.plot</code></td></tr>
+<tr><td>网络图与分子结构图</td><td>检查节点/边的化学语义；可为不同区域赋不同标签</td></tr>
+<tr><td>CAD 渲染与普通三维渲染</td><td>CAD 要有工程模型、导出记录或明确对应图注；仅有立体外观不够</td></tr>
+<tr><td>实验实录与写实仿真</td><td>视觉结果可以高度相似，需要来源证明</td></tr>
+<tr><td>自然科学动画与数值仿真</td><td>动画不保证由方程求解；来源不明时保持粗标签或拒识</td></tr>
+<tr><td>材料微结构与生物细胞</td><td>不凭相似纹理决定学科，检查当前内容来源</td></tr>
+</tbody></table></div>
+<p>若后续需要互斥，应在具体单位、上下文和版本中定义。例如，一个有来源约束的单通道采集记录可被标为 CT 或 MRI，但合成面板可能同时包含二者。不能把元数据层面的规则直接用于整张复合图。</p>
+<h3 id="33-未知不是负样本">3.3 未知不是负样本</h3>
+<p>标签命题需要分别记录 <code>supported</code>、<code>contradicted</code>、<code>insufficient</code> 等证据状态；最终发布状态再区分确认、待审、拒识、隔离。全流程字段以实际算法接口为准。</p>
+<p>没有标 <code>event.assembly</code>，不等于“视频不存在装配”。抽查到几帧没有目标，也不等于“整段视频没有目标”。只有明确检查范围与覆盖充分时，才可以生成限定范围内的负标签，例如“在 12.0–15.0 秒这一镜头中未出现可辨认温度计”。</p>
+<h2 id="4-视频标签的额外约束">4. 视频标签的额外约束</h2>
+<p>视频内容形式和事件标签分开存储。</p>
+<ul>
+<li><code>video.experimental_recording</code> 是片段形式，仍须来源确认真实采集。</li>
+<li><code>event.fluid_flow</code> 是可见流动，不是自动测得流速或雷诺数。</li>
+<li><code>event.state_change_visual</code> 是可见状态变化，不自动升级为“发生相变”或“发生化学反应”。</li>
+<li><code>event.growth_visual</code> 是可见空间范围增加，不自动证明细胞分裂、晶体生长或某种机制。</li>
+<li><code>event.deformation</code> 要跟踪同一对象，并排除镜头缩放、透视或不同对象切换。</li>
+</ul>
+<p>对时序标签至少保留：事件定义、正证据区间、被检查的区间、实际采样时间、缺失时间、目标关联依据、剪辑/遮挡/慢放信息。两个静态帧只有在时间、实体与视角关系可靠时才能支持变化判断。单帧不能证实动作顺序。</p>
+<p>“先 A 后 B”还需要事件区间可分。若 A 是 <code>[1, 4)</code>、B 是 <code>[3, 6)</code>，只能说区间重叠；不能把起始时间先后直接写成“A 完成后 B 开始”。同理，先后顺序不能证明因果。</p>
+<p><code>requires_temporal=true</code> 标记时序事件和时序任务。此配置只是最低路由提示；真实视频质量还要检查覆盖、身份、时间和事件关系，不能只检查这个布尔值。</p>
+<h2 id="5-专业细类的证据优先级">5. 专业细类的证据优先级</h2>
+<p>本提案采用以下取证顺序；冲突必须进入复核：</p>
+<ol>
+<li>原始结构/数值/采集文件与可追溯记录。</li>
+<li>与当前面板或片段一一对应的可信图注、仪器元数据、作者给出的标注。</li>
+<li>可辨认对象、可读单位、图例、通道或结构编码。</li>
+<li>仅用于提出候选的视觉相似性或模型先验。</li>
+</ol>
+<p>这不是“来源文字一定正确”。来源与像素不匹配、元数据自相矛盾、版本错误时，应保存冲突。多个模型重复读同一图注也不能算多份独立专业证据。</p>
+<p>方法轴可以指图背后的测量方法：例如 XRD 曲线同时具有 <code>appearance.plot</code> 和 <code>acquisition.xrd</code>。SEM/TEM、IR/Raman、NMR/MRI 等相邻方法需要明确来源和精确方法检查；典型外观或谱轴只能辅助核对。不能将峰位置自动升级为晶相、分子身份或疾病真值。</p>
+<p>CT、MRI、X 射线和超声都是可用于非医学研究的通用技术，因此不挂在 <code>acquisition.medical_imaging</code> 下面。医学成像标签另需对应的医学来源语境，不能由技术名自动派生。</p>
+<p>医学和生物标签只做来源确认的领域与成像/结构分类。本标签表没有疾病、临床决策、组织病理诊断结论。将来若增加这些类别，需要单独的专家标注、任务定义与验证集，不能沿用一般视觉标签的门槛。</p>
+<h2 id="51-可执行证据检查声明">5.1 可执行证据检查声明</h2>
+<p>每个标签的 <code>required_checks</code> 将部分取证要求变成策略引擎可检查的前置条件。72 个标签具有至少一项检查；没有此字段要求也仍需要视觉证据和其他通用门槛。</p>
+<p>检查放在支持该标签的每份观察证据内，例如：</p>
+<pre tabindex="0"><code data-language="json">{
+  &quot;checks&quot;: {
+    &quot;cad_provenance_confirmed&quot;: {
+      &quot;passed&quot;: true,
+      &quot;ref&quot;: &quot;source://cad-file-or-export-audit#unit-7&quot;
+    }
+  }
+}</code></pre>
+<p>这段只是证据对象的局部片段，不是完整 CLI 输入。支持同一标签的每份观察都必须满足该标签的全部 <code>required_checks</code>；一个空引用或字符串 <code>&quot;true&quot;</code> 不能替代布尔值 <code>true</code>。实际执行策略见代码和测试。</p>
+<p>检查是可信上游或人工提供的<strong>可追溯声明</strong>。引用存在且声明通过，不证明引用内容真实；当前程序不读取这些来源，不做像素识别，也无法识别伪造声明。实际接入时应由受控验证器填入并审计，不能允许生成候选的模型自行勾选即视为完成验证。</p>
+<div class="table-wrap"><table><thead><tr><th>检查 ID</th><th>作用</th></tr></thead><tbody>
+<tr><td><code>method_metadata_confirmed</code></td><td>可信采集/生成元数据或一一对应图注确认了采集方法；不能由视觉相似性或模型自述生成。</td></tr>
+<tr><td><code>acquisition_context_confirmed</code></td><td>与当前区域一一对应的来源确认显微采集语境。</td></tr>
+<tr><td><code>medical_context_confirmed</code></td><td>与当前区域对应的可信来源确认医学成像语境；不包含任何诊断判断。</td></tr>
+<tr><td><code>cad_provenance_confirmed</code></td><td>原生 CAD/工程文件、可追溯导出记录或明确对应来源确认 CAD 语境。</td></tr>
+<tr><td><code>simulation_provenance_confirmed</code></td><td>来源或运行/导出记录确认来自数值模拟；不保证模拟物理正确。</td></tr>
+<tr><td><code>experiment_provenance_confirmed</code></td><td>与当前片段对应的采集链或可信来源确认实验实录；不能仅依靠写实外观。</td></tr>
+<tr><td><code>local_domain_evidence_confirmed</code></td><td>当前面板/镜头自身的对象、单位、图注或原始来源支持该学科标签；父领域/论文标题不够。</td></tr>
+<tr><td><code>spectrum_axis_confirmed</code></td><td>可读坐标、单位或对应原始数据/图注确认谱学编码。</td></tr>
+<tr><td><code>molecular_context_confirmed</code></td><td>结构编码或对应原生分子结构/图注确认分子语义。</td></tr>
+<tr><td><code>geospatial_context_confirmed</code></td><td>地理标记、传感器/平台记录或对应来源确认地理定位语义。</td></tr>
+<tr><td><code>panel_segmentation_confirmed</code></td><td>至少两个独立内容面板已定位；标题/图例不自动视为独立内容面板。</td></tr>
+<tr><td><code>method_signature_confirmed</code></td><td>可信上游核对精确方法 ID、对应来源及适用仪器/谱轴特征；外观或典型坐标单独不够。</td></tr>
+<tr><td><code>task_reference_available</code></td><td>当前候选任务有可复核参考与范围；此检查不等于训练导出许可或任务级正确性证明。</td></tr>
+</tbody></table></div>
+<p>原始字段 <code>evidence_required</code> 和 <code>hard_negatives</code> 中仍有自然语言专业条件；除非被单独编码为验证器，程序不能自动执行它们。策略检查通过不代表所有领域事实均已自动验证。</p>
+<h2 id="6-完整标签目录">6. 完整标签目录</h2>
+<p>下表由同目录的 JSON 生成；定义、取证条件和难负例的规范版本以 JSON 为准。</p>
+<h3 id="appearance--可见表达形态">appearance · 可见表达形态</h3>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>中文名称</th><th>父标签</th><th>时序证据</th></tr></thead><tbody>
+<tr><td><code>appearance.photo</code></td><td>摄影外观</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.micrograph</code></td><td>显微图像</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.medical_image</code></td><td>医学成像图</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot</code></td><td>数据图表</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.line</code></td><td>折线图</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.scatter</code></td><td>散点图</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.bar</code></td><td>柱状图</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.histogram</code></td><td>直方图</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.heatmap</code></td><td>热力图</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.spectrum</code></td><td>谱图</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.image_overlay</code></td><td>图像叠加测量</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.distribution</code></td><td>分布图</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.plot.surface_3d</code></td><td>三维数据曲面</td><td><code>appearance.plot</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.diagram</code></td><td>科学示意图</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.diagram.flowchart</code></td><td>流程图</td><td><code>appearance.diagram</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.diagram.apparatus</code></td><td>实验装置图</td><td><code>appearance.diagram</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.diagram.schematic</code></td><td>原理或机制示意</td><td><code>appearance.diagram</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.diagram.circuit</code></td><td>电路图</td><td><code>appearance.diagram</code></td><td>按证据定义</td></tr>
+<tr><td><code>appearance.network</code></td><td>图结构或网络图</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.molecular_structure</code></td><td>分子结构表达</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.cad_render</code></td><td>CAD 或工程几何渲染</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.engineering_drawing</code></td><td>工程制图</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.simulation_field</code></td><td>模拟场可视化</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.map</code></td><td>地图或遥感表达</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.document_panel</code></td><td>文档或幻灯片面板</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.table</code></td><td>数据表格</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.equation</code></td><td>数学或符号表达</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>appearance.mixed_panel</code></td><td>复合多面板</td><td>—</td><td>按证据定义</td></tr>
+</tbody></table></div>
+<h3 id="acquisition--采集测量或生成来源">acquisition · 采集、测量或生成来源</h3>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>中文名称</th><th>父标签</th><th>时序证据</th></tr></thead><tbody>
+<tr><td><code>acquisition.optical_microscopy</code></td><td>光学显微</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.electron_microscopy</code></td><td>电子显微</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.fluorescence</code></td><td>荧光采集</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.ct</code></td><td>CT 采集</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.mri</code></td><td>MRI 采集</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.xray</code></td><td>X 射线采集</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.ultrasound</code></td><td>超声采集</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.remote_sensing</code></td><td>遥感采集</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.camera</code></td><td>相机采集</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.synthetic</code></td><td>合成或渲染</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.scanning_probe</code></td><td>扫描探针表征</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.afm</code></td><td>原子力显微 AFM</td><td><code>acquisition.scanning_probe</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.sem</code></td><td>扫描电子显微 SEM</td><td><code>acquisition.electron_microscopy</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.tem</code></td><td>透射电子显微 TEM</td><td><code>acquisition.electron_microscopy</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.diffraction</code></td><td>衍射表征</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.xrd</code></td><td>X 射线衍射 XRD</td><td><code>acquisition.diffraction</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.spectroscopy</code></td><td>谱学测量</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.xps</code></td><td>X 射线光电子能谱 XPS</td><td><code>acquisition.spectroscopy</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.nmr</code></td><td>核磁共振谱 NMR</td><td><code>acquisition.spectroscopy</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.ir</code></td><td>红外光谱 IR</td><td><code>acquisition.spectroscopy</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.raman</code></td><td>拉曼光谱 Raman</td><td><code>acquisition.spectroscopy</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.mass_spectrometry</code></td><td>质谱 MS</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.confocal</code></td><td>共聚焦显微</td><td><code>acquisition.optical_microscopy</code></td><td>按证据定义</td></tr>
+<tr><td><code>acquisition.medical_imaging</code></td><td>医学成像采集</td><td>—</td><td>按证据定义</td></tr>
+</tbody></table></div>
+<h3 id="subject--专业学科">subject · 专业学科</h3>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>中文名称</th><th>父标签</th><th>时序证据</th></tr></thead><tbody>
+<tr><td><code>subject.physics</code></td><td>物理</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>subject.physics.mechanics</code></td><td>力学</td><td><code>subject.physics</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.physics.optics</code></td><td>光学</td><td><code>subject.physics</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.physics.condensed_matter</code></td><td>凝聚态</td><td><code>subject.physics</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.chemistry</code></td><td>化学</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>subject.chemistry.reaction</code></td><td>化学反应</td><td><code>subject.chemistry</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.chemistry.spectroscopy</code></td><td>谱学化学</td><td><code>subject.chemistry</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.materials</code></td><td>材料</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>subject.materials.microstructure</code></td><td>材料微结构</td><td><code>subject.materials</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.materials.processing</code></td><td>材料加工</td><td><code>subject.materials</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.biology</code></td><td>生物</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>subject.biology.cell</code></td><td>细胞生物</td><td><code>subject.biology</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.biology.molecular</code></td><td>分子生物</td><td><code>subject.biology</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.biology.ecology</code></td><td>生态</td><td><code>subject.biology</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.medicine</code></td><td>医学</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>subject.medicine.imaging</code></td><td>医学影像研究</td><td><code>subject.medicine</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.medicine.anatomy</code></td><td>解剖结构</td><td><code>subject.medicine</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.earth_space</code></td><td>地球与空间</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>subject.earth_space.geoscience</code></td><td>地学</td><td><code>subject.earth_space</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.earth_space.climate</code></td><td>气候与气象</td><td><code>subject.earth_space</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.earth_space.astronomy</code></td><td>天文</td><td><code>subject.earth_space</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.engineering</code></td><td>工程</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>subject.engineering.cad</code></td><td>CAD 与机械设计</td><td><code>subject.engineering</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.engineering.robotics</code></td><td>机器人</td><td><code>subject.engineering</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.engineering.electronics</code></td><td>电子电气</td><td><code>subject.engineering</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.mathematics_computing</code></td><td>数学与计算</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>subject.mathematics_computing.graph</code></td><td>图论与网络</td><td><code>subject.mathematics_computing</code></td><td>按证据定义</td></tr>
+<tr><td><code>subject.mathematics_computing.numerical</code></td><td>数值计算</td><td><code>subject.mathematics_computing</code></td><td>按证据定义</td></tr>
+</tbody></table></div>
+<h3 id="video--视频内容形式">video · 视频内容形式</h3>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>中文名称</th><th>父标签</th><th>时序证据</th></tr></thead><tbody>
+<tr><td><code>video.experimental_recording</code></td><td>实验实录</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>video.procedure_demo</code></td><td>实验或操作教程</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>video.simulation</code></td><td>数值仿真视频</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>video.scientific_animation</code></td><td>科学动画</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>video.lecture_slides</code></td><td>课程或报告视频</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>video.instrument_capture</code></td><td>仪器过程录屏</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>video.screen_recording</code></td><td>科学软件操作录屏</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>video.mixed</code></td><td>混合科学视频</td><td>—</td><td>按证据定义</td></tr>
+</tbody></table></div>
+<h3 id="event--时序事件">event · 时序事件</h3>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>中文名称</th><th>父标签</th><th>时序证据</th></tr></thead><tbody>
+<tr><td><code>event.fluid_flow</code></td><td>流动</td><td>—</td><td>必需</td></tr>
+<tr><td><code>event.deformation</code></td><td>形变</td><td>—</td><td>必需</td></tr>
+<tr><td><code>event.assembly</code></td><td>装配或连接</td><td>—</td><td>必需</td></tr>
+<tr><td><code>event.disassembly</code></td><td>拆卸或分离</td><td>—</td><td>必需</td></tr>
+<tr><td><code>event.state_change_visual</code></td><td>可见状态变化</td><td>—</td><td>必需</td></tr>
+<tr><td><code>event.particle_motion</code></td><td>粒子或目标运动</td><td>—</td><td>必需</td></tr>
+<tr><td><code>event.instrument_operation</code></td><td>仪器操作</td><td>—</td><td>必需</td></tr>
+<tr><td><code>event.growth_visual</code></td><td>可见生长或扩展</td><td>—</td><td>必需</td></tr>
+</tbody></table></div>
+<h3 id="task--下游任务候选">task · 下游任务候选</h3>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>中文名称</th><th>父标签</th><th>时序证据</th></tr></thead><tbody>
+<tr><td><code>task.value_reading</code></td><td>数值读取候选</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>task.trend</code></td><td>趋势描述候选</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>task.comparison</code></td><td>比较候选</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>task.counting</code></td><td>计数候选</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>task.structure_reading</code></td><td>结构读取候选</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>task.spatial_relation</code></td><td>空间关系候选</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>task.temporal_order</code></td><td>时序排序候选</td><td>—</td><td>必需</td></tr>
+<tr><td><code>task.state_tracking</code></td><td>状态跟踪候选</td><td>—</td><td>必需</td></tr>
+<tr><td><code>task.parameter_estimation</code></td><td>参数估计候选</td><td>—</td><td>按证据定义</td></tr>
+<tr><td><code>task.hypothesis_test</code></td><td>假设检验候选</td><td>—</td><td>按证据定义</td></tr>
+</tbody></table></div>
+<h2 id="7-可扩展性与版本迁移">7. 可扩展性与版本迁移</h2>
+<p>新增标签应提交：清晰定义、至少一组正例和难负例、所需证据、允许的标注单位、与现有标签的关系、金标集抽样方案及发布策略。近义名称不得另建重复 ID。</p>
+<ul>
+<li>重命名中文展示文本不更改 ID；改变语义或证据要求必须升版本。</li>
+<li>拆分一个标签后，旧记录保持旧版本，不强行映射为某个细标签；重新取证后迁移。</li>
+<li>保存 <code>taxonomy_version</code>、策略版本、模型/提示词版本、证据文件哈希及标注时间。</li>
+<li>用“标签覆盖率、拒识率、各子群精度、标注分歧”评估扩展价值。不能通过删去困难样本掩盖低召回，也不能将粗类精度冒充细类精度。</li>
+</ul>
+<h2 id="8-边界">8. 边界</h2>
+<p>该体系覆盖图像和视频的分类与后续任务路由。CAD 原生几何拓扑、音频、时间序列、点云、代码和实验记录可作为关联资产，但不是通过图像外观直接恢复的真值。识别图中的 CAD 渲染也不代表获得了可执行 CAD 模型。</p><p class="reader-note">静态文档副本由仓库 Markdown 生成。数学与流程图代码保留源形式；完整格式与版本以仓库文件为准。</p></main></html>

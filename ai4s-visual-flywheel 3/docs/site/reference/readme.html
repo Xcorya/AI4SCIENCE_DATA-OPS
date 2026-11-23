@@ -1,0 +1,63 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>README</title><style>body{margin:0;color:#23324a;background:#f5f8fc;font:17px/1.85 system-ui,-apple-system,"PingFang SC",sans-serif}header{background:#101b34;color:white;padding:20px max(24px,calc((100vw - 1000px)/2));display:flex;gap:24px;flex-wrap:wrap}header a{color:#8de6d9}main{max-width:1000px;margin:32px auto 80px;padding:32px 44px;background:white;border:1px solid #dce4ef;border-radius:16px}h1{font-size:2rem;line-height:1.4}h2{margin-top:2.4em;padding-top:.3em;border-top:1px solid #e2e8f0;font-size:1.5rem}h3{margin-top:1.8em;font-size:1.15rem}a{color:#126c87;text-underline-offset:3px}code{font:.9em/1.6 ui-monospace,monospace;background:#edf2f8;border-radius:4px;padding:2px 5px}pre{background:#111d34;color:#e5edf7;overflow:auto;padding:20px;border-radius:10px;white-space:pre;font-size:14px;line-height:1.7}pre code{background:none;color:inherit;padding:0;font-size:inherit}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;margin:22px 0;font-size:16px}th,td{border:1px solid #dce4ef;text-align:left;vertical-align:top;padding:12px}th{background:#edf3f8}blockquote{border-left:3px solid #328d95;padding:8px 20px;margin-left:0;background:#edf8f6}.reader-note{font-size:14px;color:#526079}.formula{white-space:pre-wrap;overflow-wrap:anywhere}li{margin:9px 0}@media(max-width:680px){main{margin:16px 10px;padding:22px 18px}h1{font-size:1.6rem}header{padding:18px}th,td{min-width:140px}}</style><header><strong>VISUAL FLYWHEEL</strong><a href="../index.html">交互演示</a><a href="readme.html">文档目录</a><a href="whitepaper.html">技术说明</a></header><main><h1 id="ai4science-visual-flywheel">AI4Science Visual Flywheel</h1>
+<p>面向科研图像与视频的精细分类、证据验证和训练数据构造。</p>
+<p>本项目把“模型给出标签”推进为“每个标签都有区域或时间证据，并满足独立验收条件”。通过多轴标签、Best-of-3 候选、多轮补证据、方法专属检查、时序约束和选择性接收，构建可追溯的数据飞轮。</p>
+<p><strong>当前交付：理论方案 + 可运行策略原型 + 静态交互页面。</strong> Python 程序处理上游模型或人工提供的结构化观测，不直接识别媒体；全部演示样本是合成数据。项目尚未完成真实图像/视频精度评测或模型训练实验。</p>
+<h2 id="项目内容">项目内容</h2>
+<div class="table-wrap"><table><thead><tr><th>内容</th><th>入口</th></tr></thead><tbody>
+<tr><td>完整技术说明与算法</td><td><a href="whitepaper.html">技术说明</a></td></tr>
+<tr><td>多轴层级标签与判断边界</td><td><a href="taxonomy.html">标签规范</a> · <a href="files/configs/taxonomy.json">机器配置</a></td></tr>
+<tr><td>人工标注与仲裁</td><td><a href="annotation-guide.html">标注指南</a></td></tr>
+<tr><td>主动采样、难负例与数据闭环</td><td><a href="data-strategy.html">数据策略</a></td></tr>
+<tr><td>Bo3 与 Verifier 提示词</td><td><a href="prompts.html">提示词与编排</a></td></tr>
+<tr><td>视觉模型、视频处理与服务接入</td><td><a href="model-adapters.html">接入指南</a></td></tr>
+<tr><td>输入输出和认证格式</td><td><a href="code-contract.html">代码契约</a></td></tr>
+<tr><td>精确率、覆盖率、成本与训练收益</td><td><a href="evaluation.html">评测协议</a></td></tr>
+<tr><td>可直接使用的项目介绍</td><td><a href="project-introduction.html">项目介绍</a></td></tr>
+<tr><td>GitHub 仓库与 Pages 发布</td><td><a href="github-guide.html">上传指南</a></td></tr>
+<tr><td>公开研究与组件依据</td><td><a href="references.html">参考资料</a></td></tr>
+</tbody></table></div>
+<h2 id="核心设计">核心设计</h2>
+<ul>
+<li><strong>六轴标签</strong>：表达形态、采集/生成方式、专业学科、视频形式、时间事件、任务候选分别建模。</li>
+<li><strong>逐标签证据</strong>：整图、面板、区域、镜头与事件各自定位；父类通过不自动确认子类。</li>
+<li><strong>Bo3 与反证</strong>：三份候选用于扩大搜索；依赖族去重后再验证，不把三次同源输出当作三份独立事实。</li>
+<li><strong>视频时序</strong>：检查事件区间、实际观测片段、时间顺序与来源时间线；静帧和字幕不能独自证明动作。</li>
+<li><strong>独立认证</strong>：tune 选阈值，audit 做精确二项置信验收；证书绑定策略、本体、管线版本和来源 cohort。</li>
+<li><strong>受控训练导出</strong>：未认证结果保留为 provisional；RL 还需可信参考，奖励函数按标签与定位检查最终输出。</li>
+</ul>
+<p>98% 或 99% 可作为验收目标，不能由模型自行声明。提高精确率通常需要降低自动接收率；两者应与成本一起报告。</p>
+<h2 id="快速运行">快速运行</h2>
+<p>Python 3.10+，运行参考算法不需要安装第三方依赖或配置 API 密钥。在仓库根目录执行：</p>
+<pre tabindex="0"><code data-language="bash">python3 scripts/run_demo.py
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+python3 scripts/verify_workflow.py</code></pre>
+<p>输出在 <code>work/demo/</code>：</p>
+<pre tabindex="0"><code data-language="text">decisions.jsonl        每个标注单元的逐标签决策与原因
+sft_candidates.jsonl  满足规则的候选监督数据
+rl_candidates.jsonl   满足规则并有核准参考的候选任务
+summary.json          本次演示状态汇总</code></pre>
+<p>合成示例不能认证或进入训练，因此演示的 SFT/RL 导出为空。这一行为用于验证发布门槛；不是系统没运行。</p>
+<p>接入自己的观测：</p>
+<pre tabindex="0"><code data-language="bash">PYTHONPATH=src python3 -m visual_flywheel run \
+  --input your-observations.jsonl \
+  --calibration your-calibration.json \
+  --output-dir work/run</code></pre>
+<p>没有匹配证书时可以运行并查看暂定结果，但不能生成训练导出。真实来源、模型观测、金标与证书的生产者需要可信；本地 JSON 格式不提供抗篡改能力。</p>
+<p>也可以用 <code>python3 -m pip install .</code> 安装，再运行 <code>visual-flywheel --version</code> 或 <code>visual-flywheel run ...</code>。安装包自带默认标签与策略，不依赖当前目录。源码运行读取仓库的 <code>configs/</code>；<code>--policy</code> 和 <code>--taxonomy</code> 可显式覆盖。软件规则变更后，引擎版本参与证书指纹，旧证书需要重新验收。</p>
+<p><code>verify_workflow.py</code> 在临时目录模拟上游信任声明，验证校准、导出、奖励和拒错路径；模拟证书与数据自动删除，不产生真实精度声明。页面规则可用 Node.js 18+ 复测：<code>node tests/web_policy.cjs</code>。</p>
+<p>当前修订为 <strong>0.1.1</strong>。完整实测结果及已修复问题见 <a href="VALIDATION.html">验证报告</a>。</p>
+<h2 id="查看交互页面">查看交互页面</h2>
+<pre tabindex="0"><code data-language="bash">python3 scripts/build_site_docs.py
+python3 -m http.server 8000 --directory docs/site --bind 127.0.0.1</code></pre>
+<p>打开 <a href="http://127.0.0.1:8000">本地页面</a>。可切换图像/视频示例，查看三份候选、证据账本、阈值变化、拒识原因与候选任务 JSON，并搜索代表性标签。页面是独立的简化规则演示；Python 策略是可复算的参考实现，两者都不调用真实视觉模型。</p>
+<p>仓库附带手动触发的 GitHub Pages 工作流，发布目录仅为 <code>docs/site</code>。源码上传和页面发布步骤见 <a href="github-guide.html">上传指南</a>。</p>
+<h2 id="项目状态">项目状态</h2>
+<div class="table-wrap"><table><thead><tr><th>已提供</th><th>需要接入与实测</th></tr></thead><tbody>
+<tr><td>标签配置、标注规范、算法与数据策略</td><td>授权来源采集、近重复聚类、媒体存储</td></tr>
+<tr><td>确定性证据策略与独立认证工具</td><td>图像/视频模型、OCR、镜头与面板解析</td></tr>
+<tr><td>标签/定位任务与奖励示例</td><td>真实金标、跨来源测量、专家审核</td></tr>
+<tr><td>合成失败案例、单元测试、CI 与页面</td><td>批量生产吞吐、模型训练和收益实验</td></tr>
+</tbody></table></div>
+<p>原生 CAD、音频和论文全文推理可以沿用资产、证据、验证器与任务接口扩展。本版本聚焦图像和视频。</p>
+<h2 id="许可">许可</h2>
+<p>仓库原创代码、文档、页面与合成示例采用 <a href="files/LICENSE">MIT License</a>。外部媒体、模型和数据集保留各自许可；本仓库没有打包第三方原始媒体、模型权重或内部文档。</p><p class="reader-note">静态文档副本由仓库 Markdown 生成。数学与流程图代码保留源形式；完整格式与版本以仓库文件为准。</p></main></html>

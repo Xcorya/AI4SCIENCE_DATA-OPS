@@ -1,0 +1,40 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>model-adapters</title><style>body{margin:0;color:#23324a;background:#f5f8fc;font:17px/1.85 system-ui,-apple-system,"PingFang SC",sans-serif}header{background:#101b34;color:white;padding:20px max(24px,calc((100vw - 1000px)/2));display:flex;gap:24px;flex-wrap:wrap}header a{color:#8de6d9}main{max-width:1000px;margin:32px auto 80px;padding:32px 44px;background:white;border:1px solid #dce4ef;border-radius:16px}h1{font-size:2rem;line-height:1.4}h2{margin-top:2.4em;padding-top:.3em;border-top:1px solid #e2e8f0;font-size:1.5rem}h3{margin-top:1.8em;font-size:1.15rem}a{color:#126c87;text-underline-offset:3px}code{font:.9em/1.6 ui-monospace,monospace;background:#edf2f8;border-radius:4px;padding:2px 5px}pre{background:#111d34;color:#e5edf7;overflow:auto;padding:20px;border-radius:10px;white-space:pre;font-size:14px;line-height:1.7}pre code{background:none;color:inherit;padding:0;font-size:inherit}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;margin:22px 0;font-size:16px}th,td{border:1px solid #dce4ef;text-align:left;vertical-align:top;padding:12px}th{background:#edf3f8}blockquote{border-left:3px solid #328d95;padding:8px 20px;margin-left:0;background:#edf8f6}.reader-note{font-size:14px;color:#526079}.formula{white-space:pre-wrap;overflow-wrap:anywhere}li{margin:9px 0}@media(max-width:680px){main{margin:16px 10px;padding:22px 18px}h1{font-size:1.6rem}header{padding:18px}th,td{min-width:140px}}</style><header><strong>VISUAL FLYWHEEL</strong><a href="../index.html">交互演示</a><a href="readme.html">文档目录</a><a href="whitepaper.html">技术说明</a></header><main><h1 id="真实视觉模型与后端接入">真实视觉模型与后端接入</h1>
+<p>本仓库的 Python 程序读取结构化观测，执行证据规则、审计认证和训练导出。它不下载媒体、不调用 VLM、不解码视频。生产适配器需要完成本页描述的前置工作，再按示例 JSONL 契约提供输入。实际字段以 <a href="files.html">参考实现</a> 和 <a href="files.html">示例</a> 为准。</p>
+<h2 id="1-图像适配器">1 图像适配器</h2>
+<p>输入是资产 URI、哈希、许可、原始尺寸和可选图注。输出是规范化后的区域、OCR、模型提名、方法专属证据和否定证据。保留原图与 crop 的坐标变换；任何超分辨结果必须标明为派生图，不能把生成的细节当作原始证据。</p>
+<p>推荐组件按职责选择，而不是固定某个最新大模型：</p>
+<div class="table-wrap"><table><thead><tr><th>职责</th><th>可选技术基线</th><th>接口产物</th><th>主要限制</th></tr></thead><tbody>
+<tr><td>嵌入路由与去重</td><td>SigLIP 2 等视觉编码器</td><td>原型相似度、候选列表</td><td>不能当校准概率</td></tr>
+<tr><td>OCR 与布局</td><td>专用 OCR/文档模型</td><td>文本、框、识别分数</td><td>负号、上标、单位要复核</td></tr>
+<tr><td>多模态提名</td><td>Qwen2.5-VL 一类开源 VLM</td><td>标签、框、证据文本</td><td>仍可能幻觉，需本域评测</td></tr>
+<tr><td>图表解析</td><td>轴/图例检测、数据表重建</td><td>结构与数值区间</td><td>对数轴、误差条、遮挡易错</td></tr>
+<tr><td>掩码与追踪</td><td>SAM 2 等</td><td>掩码、轨迹、关联 id</td><td>不自动给类别语义</td></tr>
+<tr><td>专业验证</td><td>谱图、分子图、遥感等专家</td><td>支持、反对或不可判</td><td>需适用域与专属金标</td></tr>
+</tbody></table></div>
+<p>上述是组件基线示例，未在本项目做横向排名。部署前固定 checkpoint revision、许可证、预处理、输入尺寸、提示词和解码参数。模型许可证与代码许可证单独登记。<a href="https://arxiv.org/abs/2502.14786">SigLIP 2</a>、<a href="https://arxiv.org/abs/2502.13923">Qwen2.5-VL</a>、<a href="https://arxiv.org/abs/2408.00714">SAM 2</a></p>
+<h2 id="2-视频适配器">2 视频适配器</h2>
+<p>使用可信解码器记录呈现时间戳与帧索引；镜头检测产出区间；全局采样提出候选；局部连续短片验证事件。字幕、ASR、图注和画面观测分别带来源，不在模型输入拼接后丢失出处。</p>
+<p>流程建议：</p>
+<pre tabindex="0"><code data-language="text">probe → decode/PTS map → shot detection → sparse sampling
+      → frame proposals → event windows → dense local verification
+      → temporal constraints → observations.jsonl → policy</code></pre>
+<p>对高帧率或高时间精度任务，先规定最小可识别事件时长，再据此制定采样。对长静帧讲座，优先按幻灯片变化采样。采样日志必须能回答“哪个时间段确实被模型处理过”，不能以看过三个点推断看过中间全过程。</p>
+<h2 id="3-bo3-编排">3 Bo3 编排</h2>
+<p>提名器可以是同模型多视角加异构专家，但来源相关性必须显式记录。<code>dependency_family</code> 来自模型、上游观测和数据来源的依赖关系，而不是随意编三个名字。若 B 只读取 A 的描述而没看原图，B 不能增加一份视觉支持。</p>
+<p>上游需要维护派生事实的依赖图：两份结论若仅复制同一次 OCR、同一方法识别结果或同一已生成描述，应合并其依赖族。两位观察者独立查看同一原始目标图像，则不因共享被观察对象而自动合并；仍应登记模型家族和共同训练偏差。当前 Python 程序只执行给定家族的去重，不从证据引用自动推导依赖图，也不证明家族统计独立。</p>
+<p>保存调用输入哈希、媒体范围、模型版本、提示词版本、运行种子（如支持）、返回结构与工具日志。提名完成后，再把候选与局部媒体交给验证器；验证器不得只读生成器的自然语言解释。</p>
+<h2 id="4-服务职责">4 服务职责</h2>
+<div class="table-wrap"><table><thead><tr><th>服务</th><th>输入</th><th>持久化产物</th><th>重试原则</th></tr></thead><tbody>
+<tr><td>collector</td><td>授权来源配置</td><td>来源 manifest、资产</td><td>遵循来源接口与速率限制</td></tr>
+<tr><td>parser</td><td>资产、工具版本</td><td>面板/镜头/时间映射</td><td>幂等任务键</td></tr>
+<tr><td>proposer</td><td>单元、taxonomy、模型版本</td><td>候选观测</td><td>结构校验后存档</td></tr>
+<tr><td>verifier</td><td>候选、原始媒体</td><td>定位、反证、规则检查</td><td>有预算的局部补证据</td></tr>
+<tr><td>policy</td><td>观测、策略、证书</td><td>每标签决策</td><td>确定性、可复算</td></tr>
+<tr><td>review</td><td>待仲裁断言</td><td>金标、参考、适用范围</td><td>双人记录与撤销</td></tr>
+<tr><td>exporter</td><td>接收断言、任务模板</td><td>SFT/RL 与血缘</td><td>数据版本锁定</td></tr>
+<tr><td>evaluator</td><td>冻结测试与模型</td><td>指标、区间、错误簇</td><td>测试不回流同一版本</td></tr>
+</tbody></table></div>
+<p>原始资产放对象存储，断言与版本放关系库，检索向量放向量索引，处理消息放任务队列。队列以 <code>(asset_hash, unit_id, stage, pipeline_version)</code> 幂等；不同阶段独立失败，不因一个坏视频回滚整批。</p>
+<h2 id="5-生产与参考实现的边界">5 生产与参考实现的边界</h2>
+<p>参考实现能够检验坐标和时间是否有效、声明的证据是否满足标签要求、不同依赖族是否足够、认证是否匹配，以及输出是否符合参考答案。它无法检验操作者是否如实登记模型族、观测或人工审计结果，也无法仅靠 JSON 判断图像到底是什么。</p>
+<p>生产环境应从只读资产系统生成来源信息，从受控模型注册表生成依赖族，从审核系统生成金标和证书。证书应有签名、访问控制、有效期和撤回记录；本地 JSON 证书是可复现演示格式，不是抗篡改安全凭证。不要允许上传者自行写 <code>rights=allowed</code> 或伪造 <code>human_reviewed</code> 后直接进入公开训练库。</p><p class="reader-note">静态文档副本由仓库 Markdown 生成。数学与流程图代码保留源形式；完整格式与版本以仓库文件为准。</p></main></html>

@@ -1,0 +1,2983 @@
+{
+  "version": "0.1.0-proposal",
+  "status": "proposed_not_empirically_validated",
+  "description_zh": "AI4Science 图像/视频多轴标签提案。方法轴可描述可视化背后的测量方法，不要求图像是仪器直接成像。标签按面板、区域、镜头或事件定位；未知和拒识是状态，不是正标签。",
+  "axes": [
+    {
+      "id": "appearance",
+      "name_zh": "可见表达形态",
+      "role": "what_is_visibly_encoded"
+    },
+    {
+      "id": "acquisition",
+      "name_zh": "采集、测量或生成来源",
+      "role": "requires_method_or_generation_provenance"
+    },
+    {
+      "id": "subject",
+      "name_zh": "专业学科",
+      "role": "requires_content_local_domain_evidence"
+    },
+    {
+      "id": "video",
+      "name_zh": "视频内容形式",
+      "role": "shot_or_asset_genre"
+    },
+    {
+      "id": "event",
+      "name_zh": "时序事件",
+      "role": "requires_temporal_evidence"
+    },
+    {
+      "id": "task",
+      "name_zh": "下游任务候选",
+      "role": "affordance_only_not_rl_approval"
+    }
+  ],
+  "annotation_units": [
+    "asset",
+    "panel",
+    "region",
+    "shot",
+    "track",
+    "event_interval"
+  ],
+  "coordinate_conventions": {
+    "bbox": "[x_min,y_min,x_max,y_max], normalized to [0,1], relative to decoded image/frame before any crop; crop transforms must be stored",
+    "time": "seconds on decoded presentation timeline, intervals [start,end), variable frame rate resolved by PTS",
+    "label_scope": "assign to smallest unit with adequate evidence; asset label means contains, not every pixel/frame"
+  },
+  "absence_policy": "unknown is not negative; negative requires explicit inspected scope and adequate coverage",
+  "hierarchy_policy": "children need their own evidence; accepted children may imply ancestors for indexing only, with derived=true; inferred ancestors are not independent votes",
+  "exclusivity_policy": "no global exclusions: multimodal panels and mixed clips may coexist. Any future exclusivity must be unit-local and versioned.",
+  "schema_compatibility": "modalities is canonical; scope duplicates modalities for readers using the earlier prototype field",
+  "labels": [
+    {
+      "id": "appearance.photo",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "摄影外观",
+      "definition": "具有摄影成像外观的对象、场景或实验画面，可包含写实生成或渲染内容；不据此确认真实相机采集或科学真实性。真实采集事实由 acquisition.camera 及其来源证据单独表达。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的摄影外观视觉证据；不以此确认真实相机采集"
+      ],
+      "hard_negatives": [
+        "不具有摄影外观的科学对象示意绘图",
+        "仅有坐标、符号或数据编码而无摄影画面的图表"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.micrograph",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "显微图像",
+      "definition": "具有显微采集外观并能由来源或采集信息确认的图像。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "局部图像证据",
+        "来源中的显微采集信息或可核验图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "纹理照片",
+        "显微风格的模拟或生成图"
+      ],
+      "required_checks": [
+        "acquisition_context_confirmed"
+      ]
+    },
+    {
+      "id": "appearance.medical_image",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "医学成像图",
+      "definition": "来源确认的医学成像可视化；不包含疾病结论。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "成像区域",
+        "来源中可核验的医学成像说明",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "人体示意图",
+        "仅凭灰度纹理猜测影像类型"
+      ],
+      "required_checks": [
+        "medical_context_confirmed"
+      ]
+    },
+    {
+      "id": "appearance.plot",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "数据图表",
+      "definition": "通过坐标、图例、颜色或几何编码表达数据。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "带装饰网格的示意图",
+        "只有公式、没有数据编码的幻灯片"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.plot.line",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "折线图",
+      "definition": "以连接路径表示数据随有序自变量变化。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据"
+      ],
+      "hard_negatives": [
+        "轮廓线",
+        "流程图连线"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.plot.scatter",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "散点图",
+      "definition": "用点的位置表示两个或多个变量的观测。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据"
+      ],
+      "hard_negatives": [
+        "分子原子示意",
+        "无坐标语义的装饰点"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.plot.bar",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "柱状图",
+      "definition": "用柱长或柱高编码数值。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据"
+      ],
+      "hard_negatives": [
+        "直方图但分箱语义不清",
+        "实验装置中的杆状物"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.plot.histogram",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "直方图",
+      "definition": "用连续分箱编码数值变量的频次或密度。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据"
+      ],
+      "hard_negatives": [
+        "普通类别柱状图",
+        "无法确认分箱语义"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.plot.heatmap",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "热力图",
+      "definition": "用位置与颜色编码矩阵或网格的数值。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据"
+      ],
+      "hard_negatives": [
+        "普通彩色照片",
+        "没有数据编码依据的伪彩纹理"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.plot.spectrum",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "谱图",
+      "definition": "以波长、频率、能量、化学位移等谱学量为横轴的图。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "普通曲线图但轴标签不可读",
+        "山峰照片"
+      ],
+      "required_checks": [
+        "spectrum_axis_confirmed"
+      ]
+    },
+    {
+      "id": "appearance.plot.image_overlay",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "图像叠加测量",
+      "definition": "在底图上叠加边界、矢量、标记或测量编码。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据"
+      ],
+      "hard_negatives": [
+        "只有水印的图片",
+        "纯示意箭头"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.plot.distribution",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "分布图",
+      "definition": "用箱线、小提琴、密度或明确统计汇总表达分布。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据"
+      ],
+      "hard_negatives": [
+        "任意闭合轮廓",
+        "普通面积示意图"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.plot.surface_3d",
+      "axis": "appearance",
+      "parent": "appearance.plot",
+      "name_zh": "三维数据曲面",
+      "definition": "用三维坐标、曲面或体渲染表达变量。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "图表区域或面板框",
+        "足以区分该子类的几何/坐标/图例证据"
+      ],
+      "hard_negatives": [
+        "物体三维渲染但无变量编码",
+        "透视建筑照片"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.diagram",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "科学示意图",
+      "definition": "通过符号、形状与连线表达结构、过程或方法。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "普通照片",
+        "只有文字段落的页面"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.diagram.flowchart",
+      "axis": "appearance",
+      "parent": "appearance.diagram",
+      "name_zh": "流程图",
+      "definition": "节点和有向连接表示步骤或决策。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "坐标曲线",
+        "分子键连接图"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.diagram.apparatus",
+      "axis": "appearance",
+      "parent": "appearance.diagram",
+      "name_zh": "实验装置图",
+      "definition": "用绘图展示装置的组件、位置或连接。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "装置实拍照片",
+        "无实验语境的工业造型"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.diagram.schematic",
+      "axis": "appearance",
+      "parent": "appearance.diagram",
+      "name_zh": "原理或机制示意",
+      "definition": "图示表达系统原理、过程或假设机制；标签不表示机制已被证明。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "把箭头直接解释成因果真值",
+        "有序步骤流程图但没有机制语义"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.diagram.circuit",
+      "axis": "appearance",
+      "parent": "appearance.diagram",
+      "name_zh": "电路图",
+      "definition": "具有可辨认电路符号和连接语义。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "任意网络图",
+        "真实电路板照片"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.network",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "图结构或网络图",
+      "definition": "节点与边表达关系；包括知识图谱、通路、关联网络。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "散点图",
+        "仅有分子化学键的结构式"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.molecular_structure",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "分子结构表达",
+      "definition": "用结构式、球棍、蛋白结构或其他明确化学/生物结构编码表示分子。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "结构区域",
+        "可识别的结构编码或原始结构文件/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "任意彩色球体",
+        "无法确认分子语义的节点网络"
+      ],
+      "required_checks": [
+        "molecular_context_confirmed"
+      ]
+    },
+    {
+      "id": "appearance.cad_render",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "CAD 或工程几何渲染",
+      "definition": "与可追溯工程模型或 CAD 上下文对应的几何可视化。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "几何区域",
+        "CAD 原文件、工具导出记录或明确图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "普通产品照片",
+        "只有三维外观但无法确认 CAD 来源"
+      ],
+      "required_checks": [
+        "cad_provenance_confirmed"
+      ]
+    },
+    {
+      "id": "appearance.engineering_drawing",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "工程制图",
+      "definition": "含视图、尺寸、公差或几何约束的技术图纸。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "无尺寸的产品素描",
+        "仅有外轮廓截图"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.simulation_field",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "模拟场可视化",
+      "definition": "通过来源确认来自数值模拟的场、粒子或网格可视化。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可视化区域",
+        "模拟来源或可核验说明",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "与模拟相似的实验照片",
+        "把彩色云图自动认作仿真"
+      ],
+      "required_checks": [
+        "simulation_provenance_confirmed"
+      ]
+    },
+    {
+      "id": "appearance.map",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "地图或遥感表达",
+      "definition": "具有空间地理定位语义的地图、遥感或地学栅格。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "地图/遥感区域",
+        "地理标记、来源元数据或地学图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "热力图但无地理语义",
+        "普通俯视照片"
+      ],
+      "required_checks": [
+        "geospatial_context_confirmed"
+      ]
+    },
+    {
+      "id": "appearance.document_panel",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "文档或幻灯片面板",
+      "definition": "截图包含文档、论文、幻灯片或多面板布局。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "把整个论文页当成单一图类",
+        "从段落主题直接给每个子图加标签"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.table",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "数据表格",
+      "definition": "行列结构中对齐呈现字段与数据。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "网格背景",
+        "只有排版对齐但无行列字段语义"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.equation",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "数学或符号表达",
+      "definition": "可定位的公式或符号关系。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位的视觉证据；细标签须有自己的证据"
+      ],
+      "hard_negatives": [
+        "普通正文",
+        "无法解析的随机字符"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "appearance.mixed_panel",
+      "axis": "appearance",
+      "parent": null,
+      "name_zh": "复合多面板",
+      "definition": "同一资产包含两个及以上具有独立内容语义的面板。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "各面板边界",
+        "至少两个独立内容区域",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "同一照片的裁剪重复",
+        "仅有标题、图例和单幅图"
+      ],
+      "required_checks": [
+        "panel_segmentation_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.optical_microscopy",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "光学显微",
+      "definition": "来源确认的光学显微采集。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "来源/仪器记录/图注确认光学显微",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "单凭颜色或倍率猜测"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.electron_microscopy",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "电子显微",
+      "definition": "来源确认的电子显微采集，不凭灰度纹理猜 SEM/TEM。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "仪器记录或可核验图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "普通黑白照片",
+        "未确认的 SEM/TEM 细分"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.fluorescence",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "荧光采集",
+      "definition": "来源确认的荧光成像，不将伪彩直接当荧光。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "采集方式或通道元数据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "伪彩图",
+        "任意亮点图"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.ct",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "CT 采集",
+      "definition": "来源或可信成像元数据明确为 CT。 该方法可用于医学或非医学科学研究，不能据此自动赋予医学领域。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "来源图注或经去标识的可信采集元数据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭灰度判断 CT"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.mri",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "MRI 采集",
+      "definition": "来源或可信成像元数据明确为 MRI。 该方法可用于医学或非医学科学研究，不能据此自动赋予医学领域。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "来源图注或经去标识的可信采集元数据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭灰度判断 MRI"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.xray",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "X 射线采集",
+      "definition": "来源确认的 X 射线投影成像。 该方法可用于医学或非医学科学研究，不能据此自动赋予医学领域。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "采集记录或可核验图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "CT 切片",
+        "看似透视的渲染图"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.ultrasound",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "超声采集",
+      "definition": "来源确认的超声成像。 该方法可用于医学或非医学科学研究，不能据此自动赋予医学领域。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "采集记录或可核验图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "颗粒纹理图像"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.remote_sensing",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "遥感采集",
+      "definition": "来源确认的卫星、航空等遥感采集。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "平台、传感器或来源元数据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "无来源的地图贴图"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.camera",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "相机采集",
+      "definition": "来源确认由相机采集的场景或对象。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "来源或采集链记录",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "照片风格生成图"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.synthetic",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "合成或渲染",
+      "definition": "由软件绘制、渲染、模拟或生成的可视资产。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "生成/渲染记录、源文件或可信说明",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只凭不自然细节判断生成"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed"
+      ]
+    },
+    {
+      "id": "subject.physics",
+      "axis": "subject",
+      "parent": null,
+      "name_zh": "物理",
+      "definition": "物理现象、量、实验或模型的直接语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "当前面板/镜头的内容证据",
+        "与当前内容一一对应的可读图注、单位、对象名或来源上下文",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭论文标题或站点类别",
+        "从相似纹理推断领域"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.physics.mechanics",
+      "axis": "subject",
+      "parent": "subject.physics",
+      "name_zh": "力学",
+      "definition": "力、运动、应力、应变或流体等力学语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.physics.optics",
+      "axis": "subject",
+      "parent": "subject.physics",
+      "name_zh": "光学",
+      "definition": "传播、成像、干涉、衍射等光学语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.physics.condensed_matter",
+      "axis": "subject",
+      "parent": "subject.physics",
+      "name_zh": "凝聚态",
+      "definition": "电子、磁、晶格等凝聚态对象与表征语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.chemistry",
+      "axis": "subject",
+      "parent": null,
+      "name_zh": "化学",
+      "definition": "化学物质、结构、反应或表征的直接语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "当前面板/镜头的内容证据",
+        "与当前内容一一对应的可读图注、单位、对象名或来源上下文",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭论文标题或站点类别",
+        "从相似纹理推断领域"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.chemistry.reaction",
+      "axis": "subject",
+      "parent": "subject.chemistry",
+      "name_zh": "化学反应",
+      "definition": "明确反应物、产物或反应过程的来源证据。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.chemistry.spectroscopy",
+      "axis": "subject",
+      "parent": "subject.chemistry",
+      "name_zh": "谱学化学",
+      "definition": "通过可读轴、单位或来源确认的化学谱学语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.materials",
+      "axis": "subject",
+      "parent": null,
+      "name_zh": "材料",
+      "definition": "材料制备、结构、性质或性能的直接语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "当前面板/镜头的内容证据",
+        "与当前内容一一对应的可读图注、单位、对象名或来源上下文",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭论文标题或站点类别",
+        "从相似纹理推断领域"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.materials.microstructure",
+      "axis": "subject",
+      "parent": "subject.materials",
+      "name_zh": "材料微结构",
+      "definition": "来源确认的材料组织、晶粒或微观结构。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.materials.processing",
+      "axis": "subject",
+      "parent": "subject.materials",
+      "name_zh": "材料加工",
+      "definition": "材料制备、成形、沉积、热处理等加工语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.biology",
+      "axis": "subject",
+      "parent": null,
+      "name_zh": "生物",
+      "definition": "生物实体、结构、过程或实验的直接语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "当前面板/镜头的内容证据",
+        "与当前内容一一对应的可读图注、单位、对象名或来源上下文",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭论文标题或站点类别",
+        "从相似纹理推断领域"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.biology.cell",
+      "axis": "subject",
+      "parent": "subject.biology",
+      "name_zh": "细胞生物",
+      "definition": "来源确认的细胞对象或细胞过程。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.biology.molecular",
+      "axis": "subject",
+      "parent": "subject.biology",
+      "name_zh": "分子生物",
+      "definition": "来源确认的蛋白、核酸或分子生物过程。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.biology.ecology",
+      "axis": "subject",
+      "parent": "subject.biology",
+      "name_zh": "生态",
+      "definition": "物种、群体、生态系统及相互作用语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.medicine",
+      "axis": "subject",
+      "parent": null,
+      "name_zh": "医学",
+      "definition": "可信来源确认的医学对象或研究语境；不表示诊断。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "当前面板/镜头的内容证据",
+        "与当前内容一一对应的可读图注、单位、对象名或来源上下文",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭论文标题或站点类别",
+        "从相似纹理推断领域"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.medicine.imaging",
+      "axis": "subject",
+      "parent": "subject.medicine",
+      "name_zh": "医学影像研究",
+      "definition": "医学成像技术或影像研究任务。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.medicine.anatomy",
+      "axis": "subject",
+      "parent": "subject.medicine",
+      "name_zh": "解剖结构",
+      "definition": "有可靠结构标注或来源的解剖语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.earth_space",
+      "axis": "subject",
+      "parent": null,
+      "name_zh": "地球与空间",
+      "definition": "地球、环境、天文或空间对象的语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "当前面板/镜头的内容证据",
+        "与当前内容一一对应的可读图注、单位、对象名或来源上下文",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭论文标题或站点类别",
+        "从相似纹理推断领域"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.earth_space.geoscience",
+      "axis": "subject",
+      "parent": "subject.earth_space",
+      "name_zh": "地学",
+      "definition": "地质、地球物理、水文或地表过程语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.earth_space.climate",
+      "axis": "subject",
+      "parent": "subject.earth_space",
+      "name_zh": "气候与气象",
+      "definition": "气候、气象或大气观测/模拟语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.earth_space.astronomy",
+      "axis": "subject",
+      "parent": "subject.earth_space",
+      "name_zh": "天文",
+      "definition": "来源确认的天体、天文观测或模拟语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.engineering",
+      "axis": "subject",
+      "parent": null,
+      "name_zh": "工程",
+      "definition": "工程设计、构造、制造或控制的直接语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "当前面板/镜头的内容证据",
+        "与当前内容一一对应的可读图注、单位、对象名或来源上下文",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭论文标题或站点类别",
+        "从相似纹理推断领域"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.engineering.cad",
+      "axis": "subject",
+      "parent": "subject.engineering",
+      "name_zh": "CAD 与机械设计",
+      "definition": "具有 CAD 来源、尺寸约束或工程设计上下文。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.engineering.robotics",
+      "axis": "subject",
+      "parent": "subject.engineering",
+      "name_zh": "机器人",
+      "definition": "机器人实体、控制或操作任务语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.engineering.electronics",
+      "axis": "subject",
+      "parent": "subject.engineering",
+      "name_zh": "电子电气",
+      "definition": "电子电路、电气系统或器件的语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.mathematics_computing",
+      "axis": "subject",
+      "parent": null,
+      "name_zh": "数学与计算",
+      "definition": "数学结构、算法、计算方法或模型的直接语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "当前面板/镜头的内容证据",
+        "与当前内容一一对应的可读图注、单位、对象名或来源上下文",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅凭论文标题或站点类别",
+        "从相似纹理推断领域"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.mathematics_computing.graph",
+      "axis": "subject",
+      "parent": "subject.mathematics_computing",
+      "name_zh": "图论与网络",
+      "definition": "来源确认节点边语义及其图结构任务。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "subject.mathematics_computing.numerical",
+      "axis": "subject",
+      "parent": "subject.mathematics_computing",
+      "name_zh": "数值计算",
+      "definition": "离散化、求解、误差、收敛等数值方法语境。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "该细类自身的内容/来源证据",
+        "父领域标签本身不构成细类证据",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只确认父领域",
+        "从论文的其他面板借用标签"
+      ],
+      "required_checks": [
+        "local_domain_evidence_confirmed"
+      ]
+    },
+    {
+      "id": "video.experimental_recording",
+      "axis": "video",
+      "parent": null,
+      "name_zh": "实验实录",
+      "definition": "记录真实实验或观测过程的片段。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "镜头证据",
+        "来源明确实验采集而非渲染",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "写实模拟",
+        "只靠旁白声称实验"
+      ],
+      "required_checks": [
+        "experiment_provenance_confirmed"
+      ]
+    },
+    {
+      "id": "video.procedure_demo",
+      "axis": "video",
+      "parent": null,
+      "name_zh": "实验或操作教程",
+      "definition": "展示可识别步骤的操作、制备、仪器使用或教学演示。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "步骤对应时间段",
+        "动作或操作目标证据"
+      ],
+      "hard_negatives": [
+        "无步骤的现象片段"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "video.simulation",
+      "axis": "video",
+      "parent": null,
+      "name_zh": "数值仿真视频",
+      "definition": "随时间展示数值模拟状态的可视化。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "模拟来源",
+        "状态序列时间段",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "外观类似的实验实录"
+      ],
+      "required_checks": [
+        "simulation_provenance_confirmed"
+      ]
+    },
+    {
+      "id": "video.scientific_animation",
+      "axis": "video",
+      "parent": null,
+      "name_zh": "科学动画",
+      "definition": "通过制作的动画解释科学结构、过程或概念；不自动证明物理正确。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "动画片段",
+        "制作/来源语境"
+      ],
+      "hard_negatives": [
+        "数值模拟但无解释型动画证据"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "video.lecture_slides",
+      "axis": "video",
+      "parent": null,
+      "name_zh": "课程或报告视频",
+      "definition": "科学讲解、讲座、报告或幻灯片展示。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "时间段",
+        "讲解/幻灯片语境"
+      ],
+      "hard_negatives": [
+        "字幕覆盖的实验视频"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "video.instrument_capture",
+      "axis": "video",
+      "parent": null,
+      "name_zh": "仪器过程录屏",
+      "definition": "仪器或软件界面随时间呈现采集或分析过程。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可定位界面",
+        "来源或工具说明"
+      ],
+      "hard_negatives": [
+        "离线编辑器中的复现动画"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "video.screen_recording",
+      "axis": "video",
+      "parent": null,
+      "name_zh": "科学软件操作录屏",
+      "definition": "操作科学计算、建模或分析软件的录屏。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "软件界面",
+        "连续操作片段"
+      ],
+      "hard_negatives": [
+        "只有软件结果图"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "video.mixed",
+      "axis": "video",
+      "parent": null,
+      "name_zh": "混合科学视频",
+      "definition": "同一视频含多种内容片段或画中画。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "分段清单或画中画区域"
+      ],
+      "hard_negatives": [
+        "一个片段里仅有字幕"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "event.fluid_flow",
+      "axis": "event",
+      "parent": null,
+      "name_zh": "流动",
+      "definition": "可跟踪物质或纹理在时间上移动；不自动推断流体参数。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "至少两个有序帧/连续片段",
+        "可比视角中的位移证据"
+      ],
+      "hard_negatives": [
+        "相机移动",
+        "静态流线图"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "event.deformation",
+      "axis": "event",
+      "parent": null,
+      "name_zh": "形变",
+      "definition": "同一对象形状或尺寸随时间变化。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "同一对象关联",
+        "至少两个有序状态",
+        "排除相机缩放/透视变化"
+      ],
+      "hard_negatives": [
+        "不同对象切换",
+        "相机缩放"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "event.assembly",
+      "axis": "event",
+      "parent": null,
+      "name_zh": "装配或连接",
+      "definition": "可见组件随时间组合或连接。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "组件身份/位置",
+        "接触前后时间段"
+      ],
+      "hard_negatives": [
+        "仅展示成品",
+        "剪辑后跳到成品但过程不可见"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "event.disassembly",
+      "axis": "event",
+      "parent": null,
+      "name_zh": "拆卸或分离",
+      "definition": "可见连接组件随时间分离。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "连接前后时间段",
+        "组件一致性"
+      ],
+      "hard_negatives": [
+        "镜头切换",
+        "遮挡造成消失"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "event.state_change_visual",
+      "axis": "event",
+      "parent": null,
+      "name_zh": "可见状态变化",
+      "definition": "可见外观、形态、分布或运动状态发生变化；不宣称物相改变。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "变化前后区间",
+        "相机/光照等混杂检查"
+      ],
+      "hard_negatives": [
+        "仅有旁白解释",
+        "光照变化"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "event.particle_motion",
+      "axis": "event",
+      "parent": null,
+      "name_zh": "粒子或目标运动",
+      "definition": "可跟踪目标在连续时序中改变位置。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "目标关联",
+        "连续时间片段"
+      ],
+      "hard_negatives": [
+        "独立抽帧中不同目标",
+        "相机运动"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "event.instrument_operation",
+      "axis": "event",
+      "parent": null,
+      "name_zh": "仪器操作",
+      "definition": "主体对仪器或科学软件实施可辨识操作。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "操作发生区间",
+        "手/工具/界面动作证据"
+      ],
+      "hard_negatives": [
+        "只展示仪器照片"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "event.growth_visual",
+      "axis": "event",
+      "parent": null,
+      "name_zh": "可见生长或扩展",
+      "definition": "同一可跟踪对象的空间范围随时间增加；不自动给出生物生长机制。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "前后状态",
+        "比例尺/视角一致性"
+      ],
+      "hard_negatives": [
+        "缩放镜头",
+        "外部对象进入画面"
+      ],
+      "required_checks": []
+    },
+    {
+      "id": "task.value_reading",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "数值读取候选",
+      "definition": "图表/表格存在可核验数值读取任务。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可读坐标/单位/表头",
+        "原表或经人工确认的参考值",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "仅 OCR 猜测",
+        "看不清刻度"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.trend",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "趋势描述候选",
+      "definition": "有充分数据点支持明确区间内的趋势判断。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "区间与变量定义",
+        "原数据或人工确认趋势",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "凭整体印象推断",
+        "隐藏非单调区间"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.comparison",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "比较候选",
+      "definition": "对象、量纲与比较标准明确的比较任务。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "可比对象及范围",
+        "比较标准与参考",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "不同单位直接比较"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.counting",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "计数候选",
+      "definition": "可明确定义对象与计数边界的任务。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "对象定义",
+        "完整计数区域",
+        "人工或程序参考",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "遮挡严重但强行给精确数"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.structure_reading",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "结构读取候选",
+      "definition": "可核验节点、边、部件或结构关系。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "区域和实体",
+        "结构源文件或人工参考",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "把线条都当边"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.spatial_relation",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "空间关系候选",
+      "definition": "参考系和对象边界明确的空间关系任务。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "对象及参考系",
+        "可复查的空间关系",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "由二维遮挡猜真实三维接触"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.temporal_order",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "时序排序候选",
+      "definition": "有充分时序证据确定事件先后。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "各事件区间",
+        "事件间顺序可分",
+        "时间基与剪辑信息",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "只凭字幕顺序",
+        "重叠区间强行排序"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.state_tracking",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "状态跟踪候选",
+      "definition": "可在时序中追踪同一实体的状态。",
+      "modalities": [
+        "video"
+      ],
+      "scope": [
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": true,
+      "evidence_required": [
+        "实体关联",
+        "连续或明确采样片段",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "不同镜头对象混同"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.parameter_estimation",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "参数估计候选",
+      "definition": "存在原数据、单位、时间/空间标定及可执行估计器。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "标定与原数据",
+        "参数定义",
+        "独立数值验证器",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "没有标定从视觉猜参数"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "task.hypothesis_test",
+      "axis": "task",
+      "parent": null,
+      "name_zh": "假设检验候选",
+      "definition": "存在数据、对照和可执行检验方案；标签不表示因果真值。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "操作化假设",
+        "对照/数据",
+        "预先定义检验器",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "从单一视频推断因果",
+        "用生成答案自证"
+      ],
+      "required_checks": [
+        "task_reference_available"
+      ]
+    },
+    {
+      "id": "acquisition.scanning_probe",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "扫描探针表征",
+      "definition": "来源确认的扫描探针测量家族。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "把任何表面高度图都当作扫描探针测量"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.afm",
+      "axis": "acquisition",
+      "parent": "acquisition.scanning_probe",
+      "name_zh": "原子力显微 AFM",
+      "definition": "来源和测量特征确认的原子力显微；形貌图或力谱可能有不同视觉外观。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "AFM 仪器/模式或一一对应说明；高度/力等通道及单位的可核验特征"
+      ],
+      "hard_negatives": [
+        "普通三维表面渲染",
+        "其他扫描探针测量但无 AFM 确认"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.sem",
+      "axis": "acquisition",
+      "parent": "acquisition.electron_microscopy",
+      "name_zh": "扫描电子显微 SEM",
+      "definition": "来源和成像/仪器特征确认的扫描电子显微。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "SEM 仪器/采集记录或明确面板说明；不能仅凭表面纹理判定"
+      ],
+      "hard_negatives": [
+        "未确认的电子显微图",
+        "TEM、光学纹理或合成显微图"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.tem",
+      "axis": "acquisition",
+      "parent": "acquisition.electron_microscopy",
+      "name_zh": "透射电子显微 TEM",
+      "definition": "来源和成像/仪器特征确认的透射电子显微。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "TEM 仪器/采集记录或明确面板说明；不能仅凭灰度纹理判定"
+      ],
+      "hard_negatives": [
+        "未确认的电子显微图",
+        "SEM、光学纹理或合成显微图"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.diffraction",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "衍射表征",
+      "definition": "来源确认的衍射测量家族；图像或曲线均可表达结果。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "普通带峰曲线",
+        "无来源的条纹纹理"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.xrd",
+      "axis": "acquisition",
+      "parent": "acquisition.diffraction",
+      "name_zh": "X 射线衍射 XRD",
+      "definition": "对应 X 射线衍射测量的图谱/图像；不从峰形直接推断晶相真值。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "确认 XRD 方法来源；核对角度/倒易空间/强度编码及可用仪器信息"
+      ],
+      "hard_negatives": [
+        "普通强度曲线",
+        "电子衍射图误认 XRD",
+        "只因横轴含角度就认定 XRD"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.spectroscopy",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "谱学测量",
+      "definition": "来源确认的谱学测量家族；不能只凭存在峰值赋予具体方法。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查"
+      ],
+      "hard_negatives": [
+        "普通曲线但没有谱学量纲",
+        "质谱和衍射需分别确认"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.xps",
+      "axis": "acquisition",
+      "parent": "acquisition.spectroscopy",
+      "name_zh": "X 射线光电子能谱 XPS",
+      "definition": "来源与谱学特征确认的 XPS。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "核对 XPS 来源与结合能/动能等谱轴编码；单位和峰标签仅是辅助证据"
+      ],
+      "hard_negatives": [
+        "普通能量谱",
+        "XRD 或其他电子能谱"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.nmr",
+      "axis": "acquisition",
+      "parent": "acquisition.spectroscopy",
+      "name_zh": "核磁共振谱 NMR",
+      "definition": "来源与测量特征确认的 NMR 谱；不同于 MRI 成像。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "核对 NMR 来源、核种/实验说明及化学位移等适用谱学特征"
+      ],
+      "hard_negatives": [
+        "MRI 影像",
+        "普通峰图",
+        "仅凭 ppm 就确认 NMR"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.ir",
+      "axis": "acquisition",
+      "parent": "acquisition.spectroscopy",
+      "name_zh": "红外光谱 IR",
+      "definition": "来源与测量特征确认的红外光谱；包含需来源确认的相关方法。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "核对 IR/FTIR 等明确来源及波数/波长、吸收/透过等适用编码"
+      ],
+      "hard_negatives": [
+        "Raman 谱",
+        "只有波数坐标但方法未知"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.raman",
+      "axis": "acquisition",
+      "parent": "acquisition.spectroscopy",
+      "name_zh": "拉曼光谱 Raman",
+      "definition": "来源与测量特征确认的 Raman 光谱。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "核对 Raman 来源及位移/强度等适用特征；仅凭波数不能与 IR 区分"
+      ],
+      "hard_negatives": [
+        "红外光谱",
+        "任意波数峰图"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.mass_spectrometry",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "质谱 MS",
+      "definition": "来源与测量特征确认的质谱；不与普通光谱混为同一方法。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "核对质谱来源与适用质荷比 m/z、强度和测量说明"
+      ],
+      "hard_negatives": [
+        "普通峰图",
+        "只有数字轴而无质荷比/来源确认"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.confocal",
+      "axis": "acquisition",
+      "parent": "acquisition.optical_microscopy",
+      "name_zh": "共聚焦显微",
+      "definition": "来源和采集设置确认的共聚焦显微；不自动推断为荧光。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "明确共聚焦采集方法；多通道彩色外观不够"
+      ],
+      "hard_negatives": [
+        "普通荧光显微",
+        "光学切片风格渲染"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "method_signature_confirmed"
+      ]
+    },
+    {
+      "id": "acquisition.medical_imaging",
+      "axis": "acquisition",
+      "parent": null,
+      "name_zh": "医学成像采集",
+      "definition": "可信来源确认的医学成像方法家族；不包含诊断。",
+      "modalities": [
+        "image",
+        "video"
+      ],
+      "scope": [
+        "image",
+        "video"
+      ],
+      "excludes": [],
+      "requires_temporal": false,
+      "evidence_required": [
+        "与当前区域/片段一一对应的仪器、测量或采集元数据/图注",
+        "必须通过 required_checks 中列出的、带可追溯引用的上游检查",
+        "明确的医学用途/对象来源证据；通用 CT、MRI、X 射线或超声方法本身不够"
+      ],
+      "hard_negatives": [
+        "解剖示意图",
+        "仅有医学标题但图像不对应"
+      ],
+      "required_checks": [
+        "method_metadata_confirmed",
+        "medical_context_confirmed"
+      ]
+    }
+  ],
+  "required_check_definitions": {
+    "method_metadata_confirmed": "可信采集/生成元数据或一一对应图注确认了采集方法；不能由视觉相似性或模型自述生成。",
+    "acquisition_context_confirmed": "与当前区域一一对应的来源确认显微采集语境。",
+    "medical_context_confirmed": "与当前区域对应的可信来源确认医学成像语境；不包含任何诊断判断。",
+    "cad_provenance_confirmed": "原生 CAD/工程文件、可追溯导出记录或明确对应来源确认 CAD 语境。",
+    "simulation_provenance_confirmed": "来源或运行/导出记录确认来自数值模拟；不保证模拟物理正确。",
+    "experiment_provenance_confirmed": "与当前片段对应的采集链或可信来源确认实验实录；不能仅依靠写实外观。",
+    "local_domain_evidence_confirmed": "当前面板/镜头自身的对象、单位、图注或原始来源支持该学科标签；父领域/论文标题不够。",
+    "spectrum_axis_confirmed": "可读坐标、单位或对应原始数据/图注确认谱学编码。",
+    "molecular_context_confirmed": "结构编码或对应原生分子结构/图注确认分子语义。",
+    "geospatial_context_confirmed": "地理标记、传感器/平台记录或对应来源确认地理定位语义。",
+    "panel_segmentation_confirmed": "至少两个独立内容面板已定位；标题/图例不自动视为独立内容面板。",
+    "task_reference_available": "当前候选任务有可复核参考与范围；此检查不等于训练导出许可或任务级正确性证明。",
+    "method_signature_confirmed": "可信上游对精确方法 ID 的仪器/采集说明与适用特征作一一核对，引用范围对应当前面板/片段；典型坐标或视觉外观单独不能确认方法。"
+  },
+  "required_check_trust_model": "检查结果由可信上游验证器或人工提供；策略引擎只检查声明结构与通过状态，不从引用文本验证事实。模型自己勾选检查不构成验证。"
+}

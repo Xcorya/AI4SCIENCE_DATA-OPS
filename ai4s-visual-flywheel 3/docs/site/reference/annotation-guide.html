@@ -1,0 +1,186 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>annotation-guide</title><style>body{margin:0;color:#23324a;background:#f5f8fc;font:17px/1.85 system-ui,-apple-system,"PingFang SC",sans-serif}header{background:#101b34;color:white;padding:20px max(24px,calc((100vw - 1000px)/2));display:flex;gap:24px;flex-wrap:wrap}header a{color:#8de6d9}main{max-width:1000px;margin:32px auto 80px;padding:32px 44px;background:white;border:1px solid #dce4ef;border-radius:16px}h1{font-size:2rem;line-height:1.4}h2{margin-top:2.4em;padding-top:.3em;border-top:1px solid #e2e8f0;font-size:1.5rem}h3{margin-top:1.8em;font-size:1.15rem}a{color:#126c87;text-underline-offset:3px}code{font:.9em/1.6 ui-monospace,monospace;background:#edf2f8;border-radius:4px;padding:2px 5px}pre{background:#111d34;color:#e5edf7;overflow:auto;padding:20px;border-radius:10px;white-space:pre;font-size:14px;line-height:1.7}pre code{background:none;color:inherit;padding:0;font-size:inherit}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;margin:22px 0;font-size:16px}th,td{border:1px solid #dce4ef;text-align:left;vertical-align:top;padding:12px}th{background:#edf3f8}blockquote{border-left:3px solid #328d95;padding:8px 20px;margin-left:0;background:#edf8f6}.reader-note{font-size:14px;color:#526079}.formula{white-space:pre-wrap;overflow-wrap:anywhere}li{margin:9px 0}@media(max-width:680px){main{margin:16px 10px;padding:22px 18px}h1{font-size:1.6rem}header{padding:18px}th,td{min-width:140px}}</style><header><strong>VISUAL FLYWHEEL</strong><a href="../index.html">交互演示</a><a href="readme.html">文档目录</a><a href="whitepaper.html">技术说明</a></header><main><h1 id="图像与视频精确标注操作手册">图像与视频精确标注操作手册</h1>
+<p>本文给出可用于人工金标、专家复核和生产标注的流程。它是设计规范；仓库中的无模型示例只演示策略判断，不自动完成解码、OCR、检测、跟踪或专家判读。所有示例均为虚构示意。</p>
+<p>精确标注的最小交付不是一个类别名，而是：<strong>范围明确的命题 + 可定位证据 + 来源链 + 独立检查 + 决策状态</strong>。</p>
+<h2 id="1-标注对象与责任边界">1. 标注对象与责任边界</h2>
+<p>一次标注只判断被指定的命题和范围。例如：</p>
+<blockquote>面板 B 的横轴是温度，纵轴是电导率；图中两组数据具有可读图例。</blockquote>
+<p>应拆成可复核的子命题：面板 B 的边界、坐标文字、物理量、单位、数据系列与图例映射。不能让“这是一张材料论文中的图”替代这些判断。</p>
+<div class="table-wrap"><table><thead><tr><th>角色</th><th>输入</th><th>产出</th><th>不应看到的内容</th></tr></thead><tbody>
+<tr><td>第一标注员</td><td>原始资产、必要来源与单位说明</td><td>标签、区域/时间、证据、未知项</td><td>另一标注员答案、模型最终判断</td></tr>
+<tr><td>第二标注员</td><td>相同范围的原始证据</td><td>独立标注与证据</td><td>第一标注员理由与置信度</td></tr>
+<tr><td>仲裁者</td><td>原始材料、两份标注与分歧</td><td>仲裁结论、理由、修订建议</td><td>不受“多数票就是正确”的约束</td></tr>
+<tr><td>专家复核者</td><td>专业细标签与原始来源</td><td>专业语义确认或拒识</td><td>不凭标签字面猜测实验事实</td></tr>
+<tr><td>数据维护者</td><td>已确认版本</td><td>版本、修订、回滚与发布清单</td><td>不静默改写历史标签</td></tr>
+</tbody></table></div>
+<p>同一个人先后两次看自己的标注不算独立标注。三个模型复述相同错误图注，也不算三个独立事实来源。</p>
+<h2 id="2-必须保存的字段">2. 必须保存的字段</h2>
+<p>下表是生产系统的目标记录结构；实际 CLI 输入格式以主 README 与示例为准。不要将本表当成当前代码已经实现的所有字段。</p>
+<div class="table-wrap"><table><thead><tr><th>字段</th><th>含义</th></tr></thead><tbody>
+<tr><td><code>split</code></td><td>参考程序要求 <code>train</code>、<code>validation</code>、<code>test</code>、<code>tune</code> 或 <code>audit</code>；只能从授权且符合导出策略的训练范围生成训练候选</td></tr>
+<tr><td><code>asset_id</code>, <code>content_sha256</code></td><td>资产 ID 与内容哈希；换文件后不能沿用旧证据</td></tr>
+<tr><td><code>source_url</code>, <code>source_record_id</code>, <code>retrieved_at</code></td><td>可追溯来源与采集时间</td></tr>
+<tr><td><code>source_license</code>, <code>rights_status</code></td><td>授权事实、待核验状态与可发布范围</td></tr>
+<tr><td><code>unit_id</code>, <code>unit_type</code></td><td>整图、面板、区域、镜头、轨迹或事件；参考程序一行只处理一个单位，观察须声明相同 <code>unit_id</code></td></tr>
+<tr><td><code>quality.usable</code>, <code>quality.audit_ref</code></td><td>上游质量检查是否通过及其审计引用；程序不自行判断清晰度</td></tr>
+<tr><td><code>bbox</code>, <code>time_interval</code>, <code>transform</code></td><td>坐标、秒区间、裁剪/缩放变换</td></tr>
+<tr><td><code>label_id</code>, <code>taxonomy_version</code></td><td>标签命题与定义版本</td></tr>
+<tr><td><code>evidence_refs</code></td><td>指向图像区域、帧、片段、图注、源文件或数值表的引用；实际输入使用 <code>evidence.ref</code> 及各 <code>checks.*.ref</code></td></tr>
+<tr><td><code>evidence.checks</code></td><td>按标签 <code>required_checks</code> 提供 <code>{检查ID: {passed: true, ref: 可追溯引用}}</code>；可信上游声明，不能由模型自勾选充当验证</td></tr>
+<tr><td><code>evidence_relation</code></td><td>支持、反驳、证据不足；未知不等于反驳</td></tr>
+<tr><td><code>examined_scope</code>, <code>sampling_plan</code></td><td>实际看过的范围及抽帧计划</td></tr>
+<tr><td><code>annotator_or_model</code>, <code>dependency_family</code></td><td>标注来源、模型/提示词版本、共享来源/模型依赖</td></tr>
+<tr><td><code>decision</code>, <code>review_reason</code></td><td>通过、待审、拒识、隔离等路由结果与原因</td></tr>
+<tr><td><code>policy_version</code>, <code>calibration_version</code></td><td>门槛与校准依据；缺失时不得称为已校准</td></tr>
+</tbody></table></div>
+<p>来源网页公开可见不自动意味着媒体可以重新分发或用于所有训练用途。记录授权事实是为了决定开放的是原始资产、索引、标签还是代码；不确定时先隔离媒体，不根据网站可访问性补写许可。</p>
+<h2 id="3-图像标注流程">3. 图像标注流程</h2>
+<h3 id="第-0-轮资产和范围检查">第 0 轮：资产和范围检查</h3>
+<ol>
+<li>打开原始分辨率文件，确认内容哈希、解码成功、来源可追溯。</li>
+<li>确认实际媒体类型；缩略图不代替原图，预览水印不代替正文图。</li>
+<li>检查模糊、压缩、遮挡、裁切、文字过小等问题。</li>
+<li>多面板先分割，记录图注的面板字母和边界。图注与图不匹配则待审。</li>
+<li>把不可读区域标为不可读，不用超分或生成修复出的“细节”制造真值。</li>
+</ol>
+<h3 id="第-1-轮粗类提名">第 1 轮：粗类提名</h3>
+<p>只判断表达形式。可选多个 <code>appearance.*</code> 标签；每个标签有明确区域。看不清细类时停在 <code>appearance.plot</code>，不要为了填满标签而选折线或谱图。</p>
+<p>检查整图标签是否只意味着“包含”。一个论文截图含折线图、显微图和公式时，三个标签分别落在三个区域；不能把整页标为一张显微图。</p>
+<h3 id="第-2-轮细类与学科取证">第 2 轮：细类与学科取证</h3>
+<ul>
+<li>图表：检查坐标轴、刻度、图例、单位、线/点/柱编码与对数坐标。</li>
+<li>显微和成像：检查对应图注、采集元数据、比例尺；仅凭纹理不细分采集方式。</li>
+<li>分子/网络：检查节点、边、结构编码及来源文件；不能把任意彩球都当分子。</li>
+<li>CAD/工程图：确认工程模型或制图语义；维度、单位、视图与约束分别取证。</li>
+<li>学科：要求当前面板有直接证据；标题只用于提出候选。跨学科标签可以共存。</li>
+</ul>
+<p>针对每个候选明确记录：“哪个局部或来源事实支持这个标签？”答案若只有“模型感觉像”，应退回未知或待审。</p>
+<h3 id="第-3-轮反证与难负例检查">第 3 轮：反证与难负例检查</h3>
+<p>主动寻找容易导致误标的解释，不只是再次询问“你是否正确”：</p>
+<div class="table-wrap"><table><thead><tr><th>候选标签</th><th>必查反证</th></tr></thead><tbody>
+<tr><td>热力图</td><td>是否仅为彩色照片或图像伪彩？颜色是否对应明确定义的量？</td></tr>
+<tr><td>谱图</td><td>横轴及单位是否可读？是否其实是普通时间序列？</td></tr>
+<tr><td>SEM / TEM / AFM</td><td>当前面板是否有精确方法的来源记录？灰度纹理、表面起伏或比例尺单独不足以区分。</td></tr>
+<tr><td>XRD / XPS / NMR / IR / Raman / MS</td><td>当前面板对应哪种测量？核对来源、仪器/实验说明及适用谱轴；波数、ppm、能量或峰形单独不能确认。</td></tr>
+<tr><td>CT / MRI / 超声 / 共聚焦</td><td>精确方法来源是否对应当前区域/片段？不能把 MRI 与 NMR 谱或荧光与共聚焦自动互换。</td></tr>
+<tr><td>直方图</td><td>是否存在连续分箱，还是普通类别柱状图？</td></tr>
+<tr><td>荧光</td><td>是否有采集来源？是否只是后处理伪彩？</td></tr>
+<tr><td>CAD 渲染</td><td>是否有 CAD/工程来源？是否其实是产品照片或通用建模图？</td></tr>
+<tr><td>医学影像</td><td>是否有可靠语境？是否只是解剖示意或合成视觉？</td></tr>
+<tr><td>图结构</td><td>连线是否代表关系？是否是坐标曲线或分子键？</td></tr>
+</tbody></table></div>
+<p>拒绝细标签后，允许保留仍有证据的粗标签。细标签失败不意味着资产全部无效。</p>
+<h3 id="第-4-轮独立复核与裁决">第 4 轮：独立复核与裁决</h3>
+<p>由第二标注员独立核验。分歧按标签逐个处理，不以整张图“一票否决”或“一票通过”。专业细类交专家或保留未知。</p>
+<p>经过这轮也不能称为目标精度已经达到；还需在独立金标和未触碰测试集上验证。人工同样可能受低清晰度、来源错误或共同先验影响。</p>
+<h2 id="4-视频标注流程">4. 视频标注流程</h2>
+<h3 id="第-0-轮时间和编辑信息">第 0 轮：时间和编辑信息</h3>
+<p>确认完整时长、解码时间基、变帧率、镜头切换、画中画、慢放、延时摄影、循环播放与已知剪辑。参考程序的时序证据要求至少两个唯一、升序的 <code>observed_times</code> 及 <code>time_order_verified=true</code>；这只是输入门槛，还需检查实际采样质量。保存展示时间和实验真实时间的关系；没有时间倍率就不能从延时摄影估计真实速度。</p>
+<p>视频标题、自动字幕与画面分别作为证据。旁白可以错误或超出画面，不能直接把旁白内容写成视觉事件。</p>
+<h3 id="第-1-轮覆盖计划">第 1 轮：覆盖计划</h3>
+<p>先做低成本全局扫描，记录实际采样时间与每段覆盖状态，再针对变化处加密。不要只用固定每隔数秒抽帧；短暂事件可能落在间隙。</p>
+<p>生产系统可采用“低频扫描 + 切镜/运动候选 + 候选邻域加密 + 人工高风险复核”。这是候选发现策略，不能保证发现所有事件。未采样区间必须明确，不能从稀疏采样推出全片负例。</p>
+<p>区分两个概念：</p>
+<ul>
+<li><strong>被查看覆盖</strong>：某个片段是否真的被看过、以什么采样分辨率看过。</li>
+<li><strong>事件证据覆盖</strong>：事件的前态、发生过程、后态及身份关联是否充分。</li>
+</ul>
+<p>全片扫描过不代表一个动作的开始和结束已清楚；几个正证据帧也不代表全片检查完整。单一“覆盖率”数字不足以替代两者。参考程序使用显式 <code>observed_segments</code> 表达上游声明的已检查区间；事件的宽泛 <code>interval</code> 本身不能充当观察覆盖。上游还应保存采样分辨率，区间被声明看过不代表短事件检出率已得到验证。</p>
+<h3 id="第-2-轮按镜头判内容形式">第 2 轮：按镜头判内容形式</h3>
+<p>给每个镜头分配 <code>video.*</code> 候选。实验实录和仿真必须看来源；讲座内的实验插图落在局部时间和区域。将合并后的整片标签解释为“包含此内容”。</p>
+<h3 id="第-3-轮事件实体和时间">第 3 轮：事件、实体和时间</h3>
+<p>事件标注需要：</p>
+<ol>
+<li>事件可操作定义，例如“同一对象左右端间距持续减少”。</li>
+<li>起止区间及边界不确定性；不清楚时用区间范围，不假装精确到帧。</li>
+<li>对象关联：前后是否为同一对象，是否被遮挡、出画或切镜。</li>
+<li>视角、焦距、照明与背景变化检查。</li>
+<li>证据不足时记录缺口，不补写过程。</li>
+</ol>
+<p>装配视频剪辑前是零件、剪辑后是成品，只能确认两个状态；若装配动作不可见，不用 <code>event.assembly</code> 生成动作理解真值。可以生成“剪辑前后状态对比”的不同任务，前提是任务明确说明剪辑。</p>
+<h3 id="第-4-轮时序关系">第 4 轮：时序关系</h3>
+<p>事件 A、B 的区间需要明确。对于“完成 A 后开始 B”，要求 <code>end(A) &lt;= start(B)</code> 并考虑边界不确定性；重叠或边界模糊则拒绝该关系。</p>
+<p>字幕的出现顺序不是事件发生顺序，视频播放顺序不总是实验顺序，相关变化不证明因果。需要真实实验时间与干预信息的任务必须另行取证。</p>
+<h3 id="第-5-轮专家复核与缺失检查">第 5 轮：专家复核与缺失检查</h3>
+<p>优先复核短事件、低帧率、长间隙、高速过程、剪辑点、相机运动、对象交互和高价值专业细标签。复核结束保存检查范围，避免下一轮把同一不完整抽帧结果当作全新证据。</p>
+<h2 id="5-bo3多轮筛查和验证器怎样配合">5. Bo3、多轮筛查和验证器怎样配合</h2>
+<p>本项目将用户提出的 BO3 按 <strong>Best-of-3</strong> 候选策略讨论。它和“三个模型多数投票”是不同操作。</p>
+<ol>
+<li>生成三个互相隔离的候选。可以分别采用整图理解、局部结构/OCR、来源与专业语义解析；记录共享模型、输入和检索来源。</li>
+<li>每个候选输出逐标签证据，而非只给一句描述。</li>
+<li>先通过许可、格式、证据范围、时序及专业条件等硬门槛；明显不合格候选不进入评分。</li>
+<li>用预先定义的验证器比较候选，选可核验质量更高者；没有合格候选则拒识。</li>
+<li>对高成本/高价值或分歧样本加密取证或人工仲裁，不能无限重试直到出现想要的答案。</li>
+</ol>
+<p>三个候选都没有来源，不能“共同确认”它是实验实录。多个候选来自同一个模型家族，重复提示或引用同一图注时，相关错误仍可能存在。多视角对模型鲁棒性有帮助，但不是独立样本量。</p>
+<p>生产适配器应针对当前标签建立上游依赖图：同一模型重复输出、复制的 OCR 文本、同一图注解析结果或前一候选答案所派生的事实，不能换名字变成多个依赖族。特别是方法标签，多模型重复引用唯一一份方法说明，不等于多份独立方法事实。对同一派生事实相连的观察应合并或明确标为相关支持，再交给冻结策略。</p>
+<p>原始目标图像/视频本身是大家共同判断的对象，不能仅因为观察同一资产就把所有独立观察都合并；应区分“共享被判断的原始媒体”和“共享模型结果、OCR、图注解析或答案等派生事实”。是否独立与当前命题有关：两份不同来源的视觉观察不自动提供两份独立的仪器来源证明。<code>dependency_family</code> 应由受控宿主根据这些依赖生成。当前参考程序只按已提供的族 ID 去重，不会自动从 <code>ref</code> 或 <code>checks.*.ref</code> 推导依赖图；这是可信上游的责任，也不产生统计独立保证。</p>
+<p>验证器应回答具体命题：</p>
+<div class="table-wrap"><table><thead><tr><th>命题</th><th>可采用的验证器</th><th>能证明的范围</th></tr></thead><tbody>
+<tr><td>轴名和单位</td><td>OCR 与原图区域复核、人工金标</td><td>可读文字；不证明实验正确</td></tr>
+<tr><td>数值读取</td><td>原始表/结构文件、数字化误差界与人工核验</td><td>指定点/区间的数值</td></tr>
+<tr><td>层级与模式</td><td>标签约束、JSON 校验、父子证据要求</td><td>结构合法性；不证明语义正确</td></tr>
+<tr><td>时序顺序</td><td>事件区间、时间基和对象关联检查</td><td>给定事件的顺序；不证明因果</td></tr>
+<tr><td>CAD 几何关系</td><td>原生模型上的几何计算</td><td>原生几何命题；不来自渲染像素猜测</td></tr>
+<tr><td>领域细标签</td><td>对应来源和专家盲审</td><td>指定范围内的专业语义</td></tr>
+</tbody></table></div>
+<p>“另一个模型说答案正确”可作为复核信号，不应独自充当最终可验证奖励。所有验证器还应有自己的错误类型、适用范围和回归用例。</p>
+<h2 id="6-两个完整示例">6. 两个完整示例</h2>
+<h3 id="示例-a复合科学图">示例 A：复合科学图</h3>
+<p>假设一张虚构图有两个面板：A 为带比例尺的灰度显微图，B 为可读轴名和单位的应力—应变曲线；对应图注确认金属样品和电子显微采集。</p>
+<ul>
+<li>A：可提名 <code>appearance.micrograph</code>、<code>acquisition.electron_microscopy</code>、<code>subject.materials</code>；需要图注与面板精确对应。</li>
+<li>B：可提名 <code>appearance.plot.line</code>、<code>subject.materials</code>、<code>subject.physics.mechanics</code>；每个标签引用 B 的具体依据。</li>
+<li>整图：可提名 <code>appearance.mixed_panel</code>，并派生“包含显微图/折线图”的检索字段。</li>
+<li><code>subject.materials.microstructure</code>：只有图注/结构内容确实支持时才给；“金属样品”本身不够。</li>
+<li>B 的 <code>task.value_reading</code>：只有存在可靠参考数值或人工确认数字化值时，才继续构造数值 QA；单有曲线形状不能凭空给精确值。</li>
+</ul>
+<p>若图注确认 SEM，则可进一步提名 <code>acquisition.sem</code>；必须同时满足 <code>method_metadata_confirmed</code> 和精确方法的 <code>method_signature_confirmed</code>。只确认电子显微而不清楚 SEM/TEM 时停在 <code>acquisition.electron_microscopy</code>。</p>
+<p>若图注不清楚 A 的采集方式，可保留已确认的外观粗类，采集方式保持未知。不能从 B 的力学坐标推断 A 的具体显微类型。</p>
+<h3 id="示例-b虚构流动视频">示例 B：虚构流动视频</h3>
+<p>假设来源明确为实验，视频 0–10 秒：2–4 秒出现流动，4–5 秒被手遮挡，5 秒后切到不同视角。</p>
+<ul>
+<li>在 2–4 秒同一可比视角内，可依据连续片段提名 <code>event.fluid_flow</code>。</li>
+<li><code>video.experimental_recording</code> 还需要来源采集说明，不能只看水的外观。</li>
+<li>4–5 秒保持“遮挡、状态不明”；5 秒后重新建立对象和视角关联。</li>
+<li>可以构造明确限定在 2–4 秒的描述或排序问题。</li>
+<li>没有空间标定、真实时间倍率和可执行方法时，不能生成精确流速答案。</li>
+<li>不能据此声称“0–10 秒始终流动”，也不能从遮挡前后推出未看到的动作。</li>
+</ul>
+<h2 id="7-金标集与错误审计">7. 金标集与错误审计</h2>
+<p>金标集至少按来源、学科、表达形式、清晰度、多面板复杂度、视频长度和短事件比例分层。不同网页的同一张论文图、同视频裁剪和相同实验派生图应按来源家族分组，避免跨训练、校准和测试集泄漏。</p>
+<p>金标标注员独立工作，分歧由仲裁者记录。金标并非不可变：发现错误应升版本，并检查哪些训练样本和门槛依赖它。校准集用于选门槛；测试集用于报告结果，不循环拿测试集调参。</p>
+<p>错误审计至少区分：</p>
+<ul>
+<li>外观类型误识别。</li>
+<li>专业标签来自整篇论文的错误传播。</li>
+<li>来源、许可或文件版本不匹配。</li>
+<li>OCR、单位、对数轴或图例映射错误。</li>
+<li>面板混淆、裁剪坐标变换错误。</li>
+<li>视频漏掉短事件、误判同一对象、忽略剪辑或慢放。</li>
+<li>把未知当作负例。</li>
+<li>把生成答案或候选自评分当作真值。</li>
+</ul>
+<p>逐标签精度应只在被接受的标签命题上计算，并同时报告覆盖率、拒识率与相关子群表现。若金标仅核验候选标签，能评估的是候选中的精度，不能宣称完整召回率。样本很少或没有覆盖的细类应单列，不用父类或总体指标掩盖。</p>
+<h2 id="8-从标签到-sft--rl-数据">8. 从标签到 SFT / RL 数据</h2>
+<p>分类通过后只是路由完成。训练样本还要通过任务级验证：</p>
+<div class="table-wrap"><table><thead><tr><th>任务</th><th>可接受参考</th><th>应拒绝的构造</th></tr></thead><tbody>
+<tr><td>标签识别</td><td>独立金标或经过验证的标签命题与范围</td><td>模型自己生成标签，再自己评满分</td></tr>
+<tr><td>图表数值问答</td><td>原始数值或带误差界的人审数字化结果，含单位</td><td>看图生成一个精确数值后拿它作真值</td></tr>
+<tr><td>结构问答</td><td>原生结构、可信标注或专家确认关系</td><td>仅根据美观渲染猜拓扑</td></tr>
+<tr><td>视频排序</td><td>已核验事件区间、对象关联与时间基</td><td>用字幕顺序或候选文字顺序作答案</td></tr>
+<tr><td>参数估计</td><td>标定、数据、可执行估计器与容差</td><td>无单位无标定的视觉猜值</td></tr>
+</tbody></table></div>
+<p>SFT 可采用“问题、答案、证据引用、适用范围、参考版本”。无需强迫生成长篇内部思维过程；可提供简洁、可复查的依据说明。</p>
+<p>RL 交付应是“任务输入 + 参考事实 + 可执行评分器 + 适用范围 + 版本”。奖励检查答案正确性、单位/容差、证据定位和格式，具体权重须防止模型靠格式分掩盖事实错误。可回答与不可回答任务都要有金标；既不奖励无差别编造，也不能让永远拒答得到高分。</p>
+<p>只有标签、没有独立可核验目标的样本，不能因为名字包含 RL 就当作可靠强化学习数据。这里讨论的是为模型训练构造数据和奖励接口；推理时是否采用搜索、工具或验证，是另一项需单独评估的部署策略。</p>
+<h2 id="9-标注验收清单">9. 标注验收清单</h2>
+<ul>
+<li>标签有准确版本，且有范围和自己的证据。</li>
+<li>多面板、多镜头没有互相借用专业标签。</li>
+<li>粗类和细类、可见变化和机制解释分别处理。</li>
+<li>未知、负例、拒识、待审和授权隔离没有混为一类。</li>
+<li>视频记录时间基、采样缺口、对象关联和边界不确定性。</li>
+<li>Bo3 相关候选不会重复累计为独立证据。</li>
+<li>训练参考与奖励不由同一条未经验证的生成内容自证。</li>
+<li>通过样本和拒绝样本都留审计记录；发布范围与来源授权一致。</li>
+</ul><p class="reader-note">静态文档副本由仓库 Markdown 生成。数学与流程图代码保留源形式；完整格式与版本以仓库文件为准。</p></main></html>

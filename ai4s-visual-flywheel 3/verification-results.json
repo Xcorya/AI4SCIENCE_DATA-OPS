@@ -1,0 +1,90 @@
+{
+  "release": "0.1.1",
+  "date": "2026-11-23",
+  "software_contract_only": true,
+  "real_media_accuracy_evaluated": false,
+  "python_tests": {
+    "passed": 42,
+    "runtime": "3.12"
+  },
+  "web_logic_tests": {
+    "passed": 16,
+    "runtime": "Node.js 24"
+  },
+  "installed_workflow": {
+    "software_contract_only": true,
+    "real_media_evaluated": false,
+    "installed_wheel": true,
+    "checks": [
+      {
+        "name": "outside_checkout_version",
+        "pass": true,
+        "version": "0.1.1"
+      },
+      {
+        "name": "outside_checkout_defaults_and_demo",
+        "pass": true,
+        "result": {
+          "assets": 9,
+          "statuses": {
+            "provisional": 2,
+            "human_review": 5,
+            "quarantine": 1,
+            "abstain": 1
+          },
+          "sft_candidates": 0,
+          "rl_candidates": 0
+        }
+      },
+      {
+        "name": "temporary_trust_boundary_certificate",
+        "pass": true,
+        "real_precision_claim": false
+      },
+      {
+        "name": "image_and_video_positive_exports",
+        "pass": true,
+        "result": {
+          "assets": 2,
+          "statuses": {
+            "accepted": 2
+          },
+          "sft_candidates": 2,
+          "rl_candidates": 2
+        }
+      },
+      {
+        "name": "image_video_reward_correct_and_wrong",
+        "pass": true
+      },
+      {
+        "name": "stale_certificate_blocks_exports",
+        "pass": true
+      },
+      {
+        "name": "renamed_duplicate_audit_content_rejected",
+        "pass": true
+      },
+      {
+        "name": "invalid_json_has_line_number_no_traceback",
+        "pass": true
+      }
+    ],
+    "passed": 8
+  },
+  "static_html_files": 15,
+  "taxonomy": {
+    "labels": 106,
+    "gated_labels": 72,
+    "check_types": 13
+  },
+  "browser": {
+    "video_coverage_blocks_labels_and_target": true,
+    "threshold": true,
+    "taxonomy_search": true,
+    "documentation_link": true,
+    "download_file_saved_and_parsed": true,
+    "download_event_notification_timed_out": true,
+    "console_errors": 0
+  }
+}

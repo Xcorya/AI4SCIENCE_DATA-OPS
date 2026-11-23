@@ -1,0 +1,73 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>evaluation</title><style>body{margin:0;color:#23324a;background:#f5f8fc;font:17px/1.85 system-ui,-apple-system,"PingFang SC",sans-serif}header{background:#101b34;color:white;padding:20px max(24px,calc((100vw - 1000px)/2));display:flex;gap:24px;flex-wrap:wrap}header a{color:#8de6d9}main{max-width:1000px;margin:32px auto 80px;padding:32px 44px;background:white;border:1px solid #dce4ef;border-radius:16px}h1{font-size:2rem;line-height:1.4}h2{margin-top:2.4em;padding-top:.3em;border-top:1px solid #e2e8f0;font-size:1.5rem}h3{margin-top:1.8em;font-size:1.15rem}a{color:#126c87;text-underline-offset:3px}code{font:.9em/1.6 ui-monospace,monospace;background:#edf2f8;border-radius:4px;padding:2px 5px}pre{background:#111d34;color:#e5edf7;overflow:auto;padding:20px;border-radius:10px;white-space:pre;font-size:14px;line-height:1.7}pre code{background:none;color:inherit;padding:0;font-size:inherit}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;margin:22px 0;font-size:16px}th,td{border:1px solid #dce4ef;text-align:left;vertical-align:top;padding:12px}th{background:#edf3f8}blockquote{border-left:3px solid #328d95;padding:8px 20px;margin-left:0;background:#edf8f6}.reader-note{font-size:14px;color:#526079}.formula{white-space:pre-wrap;overflow-wrap:anywhere}li{margin:9px 0}@media(max-width:680px){main{margin:16px 10px;padding:22px 18px}h1{font-size:1.6rem}header{padding:18px}th,td{min-width:140px}}</style><header><strong>VISUAL FLYWHEEL</strong><a href="../index.html">交互演示</a><a href="readme.html">文档目录</a><a href="whitepaper.html">技术说明</a></header><main><h1 id="精准标签与训练任务评测协议">精准标签与训练任务评测协议</h1>
+<p>评测分三层：标签是否正确、训练任务是否可验证、训练后是否产生可复现收益。运行单元测试只能验证程序规则，不能替代真实媒体上的标签评测。</p>
+<h2 id="1-数据切分">1 数据切分</h2>
+<p>先按论文、视频、实验和近重复簇切成来源组，再给组分配 train、tune、audit 和 test。一个组只属于一个切分。测试集不用于修提示词、挑阈值或选择候选模型；如果已经用于这些动作，必须重新准备独立测试。</p>
+<div class="table-wrap"><table><thead><tr><th>集合</th><th>用途</th><th>能否调阈值</th><th>能否训练</th></tr></thead><tbody>
+<tr><td>train</td><td>训练分类器、排序器、领域专家</td><td>不以它证明验收指标</td><td>可以</td></tr>
+<tr><td>tune</td><td>选择门槛与固定超参数</td><td>可以</td><td>不用于本次评测训练</td></tr>
+<tr><td>audit</td><td>对冻结门槛做独立认证</td><td>不可以</td><td>不可以</td></tr>
+<tr><td>test</td><td>比较模型与数据策略收益</td><td>不可以</td><td>不可以</td></tr>
+<tr><td>external</td><td>新网站、设备或领域外测</td><td>不可以</td><td>不可以</td></tr>
+</tbody></table></div>
+<p><code>external</code> 是评测用途名称，不是参考程序接受的 <code>split</code> 字面值。外测记录使用 <code>split=&quot;test&quot;</code>，并通过独立的 <code>cohort</code>（例如 <code>external_new_instrument_v1</code>）标识来源范围；不得据此复用其他 cohort 的认证。</p>
+<p>论文的图注、正文、补充材料和视频都纳入同组。跨网站转载用内容去重簇追踪。当前程序能发现本批已声明的跨切分来源组和精确哈希重叠；近重复与来源组归并需要上游实现。</p>
+<h2 id="2-金标规范">2 金标规范</h2>
+<p>每条细标签由至少两名合格标注者独立判断；分歧交第三人仲裁。允许不可判，不能强迫选一个叶子类。记录原始判断、仲裁结论、证据、领域资质与版本。报告一致性、不可判率与主要分歧类，而不只保留最终答案。</p>
+<p>分别建立 image_only 和 image_plus_context 任务。上下文确认的 SEM 标签不能被混入“单凭像素识别 SEM”的结果。事件标注给边界容差和遮挡范围；视频中的动作、结果和因果机理分别判定。</p>
+<p>参考实现的校准输入按每个标签、模态、来源组最多一个独立单元计数。如果需要同来源多个单元，必须预先随机抽取代表单元，或更换为有理论依据的分组估计；不能任意挑最容易的一张来认证总体。</p>
+<h2 id="3-标签指标">3 标签指标</h2>
+<div class="table-wrap"><table><thead><tr><th>指标</th><th>含义</th><th>报告要求</th></tr></thead><tbody>
+<tr><td>接收 precision</td><td>自动接收断言中正确的比例</td><td>每类、模态、来源 cohort，含置信下界</td></tr>
+<tr><td>recall</td><td>金标正例被成功识别的比例</td><td>不能把未提名当真负例</td></tr>
+<tr><td>接收率</td><td>接收断言或可自动处理单元的占比</td><td>明确分母定义</td></tr>
+<tr><td>风险覆盖曲线</td><td>接收范围与错误率的取舍</td><td>固定模型改变阈值绘制</td></tr>
+<tr><td>层级与粒度</td><td>父级正确和叶子正确的差异</td><td>精确叶子匹配与父级匹配分报</td></tr>
+<tr><td>空间定位</td><td>框/掩码与金标的重合</td><td>面板、对象、文字分别统计</td></tr>
+<tr><td>时间定位</td><td>事件区间与金标的 tIoU</td><td>短事件、边界误差另报</td></tr>
+<tr><td>开放集拒识</td><td>未知类被误接收的比例</td><td>单列未知类与新来源</td></tr>
+<tr><td>质量与成本</td><td>每千资产成本、延迟、复核率</td><td>包括失败与拒识的消耗</td></tr>
+</tbody></table></div>
+<p>总体 micro precision 可能被大类主导；macro precision、最差类与长尾结果同时保留。跨学科标签允许共存，不能用单标签 accuracy 概括。</p>
+<h2 id="4-冻结与认证">4 冻结与认证</h2>
+<p>在查看 audit 结果前，冻结代码版本、策略、模型、提示词、专家、预处理、taxonomy、cohort 和阈值选择程序。tune 选择一次门槛，audit 只回答通过或未通过。audit 未通过后不能在同一 audit 上反复调参直到过线；要重新分配独立审计预算。</p>
+<p>代码实现单侧 Clopper–Pearson 精确下界，对同批认证标签使用 Bonferroni 分配 alpha。默认目标 precision=0.98、familywise alpha=0.05；默认最小 audit 数只是最低计数门槛，并不确保置信下界过线。参考实现无外部统计库；统计假设和参数见 <a href="whitepaper.html#8-阈值校准与精确率验收">技术说明</a>。</p>
+<p>若模型、预处理或提示词有变化，须更新策略中的管线版本并重新认证。若只有文件哈希一致但上游模型发生变化，证书不再有效。来源 cohort 不能仅命名为“所有互联网数据”来回避分布限制。</p>
+<h2 id="5-必做消融">5 必做消融</h2>
+<p>以相同媒体、相同标注预算比较以下策略：</p>
+<ol>
+<li>单 VLM 直接分类。</li>
+<li>同模型三次多数投票。</li>
+<li>同模型 Best-of-3 加同模型评分。</li>
+<li>多视角或异构专家加定位证据。</li>
+<li>第 4 组加细标签专属检查、反证与时序约束。</li>
+<li>第 5 组加独立校准和拒识。</li>
+</ol>
+<p>除同阈值比较外，做<strong>相同接收率</strong>或<strong>相同成本</strong>比较。否则较高精确率可能只来自丢弃更多样本。多轮筛查还要比较一次全量高成本调用与预算路由，检验节省是否来自合理分配。</p>
+<h2 id="6-压力测试">6 压力测试</h2>
+<ul>
+<li>图像：微小负号、单位、对数轴、低清图例、多面板跨区引用、裁掉比例尺、假字幕、同形异学科、未见方法、渲染冒充实拍。</li>
+<li>视频：快事件、低采样、镜头跳变、重复播放、倒放、字幕与画面冲突、事件重叠、遮挡、可变帧率、转码偏移。</li>
+<li>证据：同模型换三个名字、复制 OCR、只有图注没有画面、框超界、时间超界、伪造全程覆盖。</li>
+<li>发布：来源许可缺失、证书不匹配、synthetic 标记、参考答案未核准、跨切分重复、输出含非有限数。</li>
+</ul>
+<p>输入更换后的结果必须解释证据变化。对语义保持变换检查稳定性；对改变语义的变换检查模型是否能相应改变结论。</p>
+<h2 id="7-rl-验证器验收">7 RL 验证器验收</h2>
+<p>参考奖励任务要求返回标签及区域或时间窗。标签不对得零分；标签正确后检查 IoU；默认 IoU≥0.5 才得 1 分。这个阈值是演示任务约定，不代表所有科学任务的最佳阈值。精细事件和小对象应由任务单独规定更合适容差。</p>
+<p>验收集合同时包括正确答案、合法替代框、错误标签、空框、整图投机框、超范围时间、同标签另一对象和部分事件。参考程序不验证任意自然语言推理链，也没有实现科学机理判断。</p>
+<p>奖励输入不能暴露答案在用户 prompt 中；<code>reference</code> 只给评分端。公开数据包含答案用于复现，不意味着训练 rollout 时可以把答案拼入输入。禁止模型自报 reward、把标注标签回显当推理能力或按解释长度加分。</p>
+<h2 id="8-训练收益实验">8 训练收益实验</h2>
+<p>保持模型初始化、总训练 token、步数、优化器和评测条件一致。对比原始数据、随机等量数据、精准标签数据、精准标签加可验证任务。固定测试与新来源外测都报告，至少检查多次运行的波动和领域回归。</p>
+<p>主要结论以独立测试上的改进为准。标签验收通过并不自动说明模型推理能力提高；数据选择、训练损失与模型容量都会影响收益。</p>
+<h2 id="9-报告模板">9 报告模板</h2>
+<pre tabindex="0"><code data-language="text">版本与冻结时间：
+模型/提示词/预处理/策略/taxonomy：
+来源 cohort 与抽样方案：
+唯一来源组数与切分检查：
+每标签 audit n / correct / precision 下界 / 接收率：
+未知类与新来源误接收率：
+空间与时间定位：
+人工分歧与仲裁：
+每千资产成本与每正确任务成本：
+下游同预算提升与回归：
+已知缺口与不适用范围：</code></pre>
+<p>没有实测值时写“待测”，不填写设计目标冒充结果。</p><p class="reader-note">静态文档副本由仓库 Markdown 生成。数学与流程图代码保留源形式；完整格式与版本以仓库文件为准。</p></main></html>
