@@ -15,11 +15,11 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-B4F58A?style=flat-square&labelColor=111612">
 </p>
 
-[快速启动](#-30-秒启动) ·
-[系统架构](#-系统架构) ·
-[真实验证](#-真实验证) ·
-[项目文档](#-项目文档) ·
-[能力边界](#-能力边界)
+[快速启动](#quick-start) ·
+[系统架构](#architecture) ·
+[真实验证](#verification) ·
+[项目文档](#documentation) ·
+[能力边界](#boundaries)
 
 </div>
 
@@ -57,6 +57,8 @@ flowchart LR
 
 飞轮并不把“生成更多数据”当作终点。它让模型错误改变下一轮数据处理优先级，同时保持来源许可、证据一致性、答案验证和基准隔离不可绕过。
 
+<a id="verification"></a>
+
 ## ✦ 真实验证
 
 以下数字来自独立空数据库、真实网络请求、浏览器操作和最终发布包复验，不是页面中的装饰数据。
@@ -81,7 +83,7 @@ flowchart LR
 - 校验示例 JSONL 与 manifest 的行数和 SHA-256；
 - 校验文档本地链接、Git 暂存清单和下载安全响应头。
 
-完整证据见 [实跑复验报告](docs/VERIFICATION-2026-11-23.md)。
+完整证据见 [实跑复验报告](./docs/VERIFICATION-2026-11-23.md)。
 
 ## ✦ 能力全景
 
@@ -109,6 +111,8 @@ flowchart LR
 
 统一资产协议允许先归档、后解析。**归档成功不等于内容已被理解**：未配置对应解析器的二进制资产会保留原始文件和来源信息，但不会被伪装成已验证科研数据。
 
+<a id="architecture"></a>
+
 ## ✦ 系统架构
 
 ```text
@@ -133,6 +137,8 @@ flowchart LR
 
 核心项目只使用 Python 标准库。无需 Node、npm、外部数据库或模型密钥，即可运行完整的离线演示闭环。
 
+<a id="quick-start"></a>
+
 ## ⚡ 30 秒启动
 
 ### 环境要求
@@ -144,7 +150,7 @@ flowchart LR
 ### 启动完整演示
 
 ```bash
-git clone https://github.com/YOUR_ACCOUNT/helix-science-flywheel.git
+# 克隆或下载仓库后，进入项目根目录
 cd helix-science-flywheel
 
 python3 -m helix seed
@@ -152,7 +158,7 @@ python3 -m helix run --limit 24
 python3 -m helix serve
 ```
 
-打开 [http://127.0.0.1:8765](http://127.0.0.1:8765)。
+服务启动成功后，再打开 `http://127.0.0.1:8765`。服务未运行时，本地地址无法访问。
 
 本地工作台包含：
 
@@ -333,6 +339,8 @@ helix/
 
 运行时生成的 `data/`、`exports/`、checkpoint、`.env` 和缓存均由 Git 忽略。
 
+<a id="boundaries"></a>
+
 ## ✦ 能力边界
 
 为了让项目可信，下面这些内容必须明确区分“已实现”和“设计中”。
@@ -371,19 +379,21 @@ helix/
 - [ ] 持久任务队列、对象存储和 PostgreSQL
 - [ ] 单学科真实模型训练与固定测试集消融实验
 
+<a id="documentation"></a>
+
 ## ✦ 项目文档
 
 | 文档 | 内容 |
 | --- | --- |
-| [详细介绍书](docs/HANDBOOK.zh-CN.md) | 理论、算法、模态路线、数据协议与迭代方法 |
-| [实跑复验报告](docs/VERIFICATION-2026-11-23.md) | 真实执行结果、修复问题与未打通能力 |
-| [策略映射](docs/STRATEGY.md) | 原始数据飞轮策略到工程模块的映射 |
-| [API 与运行说明](docs/API.md) | HTTP API、CLI、导入协议与部署边界 |
-| [数据卡](docs/DATA_CARD.md) | 演示数据来源、用途、许可与限制 |
-| [科研级构造规格](configs/research_recipe.json) | 学科层级、置信映射与验证器路线 |
-| [版本说明](RELEASE_NOTES.md) | v0.1.0 发布内容与边界 |
-| [安全策略](SECURITY.md) | 私密报告方式与本地部署约束 |
-| [GitHub 发布指南](docs/GITHUB.md) | 仓库创建、上传和 Release 建议 |
+| [详细介绍书](./docs/HANDBOOK.zh-CN.md) | 理论、算法、模态路线、数据协议与迭代方法 |
+| [实跑复验报告](./docs/VERIFICATION-2026-11-23.md) | 真实执行结果、修复问题与未打通能力 |
+| [策略映射](./docs/STRATEGY.md) | 原始数据飞轮策略到工程模块的映射 |
+| [API 与运行说明](./docs/API.md) | HTTP API、CLI、导入协议与部署边界 |
+| [数据卡](./docs/DATA_CARD.md) | 演示数据来源、用途、许可与限制 |
+| [科研级构造规格](./configs/research_recipe.json) | 学科层级、置信映射与验证器路线 |
+| [版本说明](./RELEASE_NOTES.md) | v0.1.0 发布内容与边界 |
+| [安全策略](./SECURITY.md) | 私密报告方式与本地部署约束 |
+| [GitHub 发布指南](./docs/GITHUB.md) | 仓库创建、上传和 Release 建议 |
 
 ## ✦ 参与贡献
 
@@ -395,7 +405,7 @@ helix/
 - benchmark 污染检测与数据质量测试；
 - 真实但可再分发的小型科学样本。
 
-提交前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，并运行：
+提交前请阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)，并运行：
 
 ```bash
 python3 -m unittest discover -s tests -v
