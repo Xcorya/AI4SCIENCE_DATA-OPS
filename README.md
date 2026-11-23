@@ -22,8 +22,9 @@
 [能力边界](#boundaries)
 
 </div>
-[![DOI](https://zenodo.org/badge/1468236881.svg)]
+
 ---
+[![DOI](https://zenodo.org/badge/1468236881.svg)]
 
 ## HELIX 是什么
 
